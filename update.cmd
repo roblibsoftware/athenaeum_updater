@@ -6,12 +6,10 @@ rem   https://creativecommons.org/licenses/by-sa/4.0/
 
 rem %1 is file name  %2 is folder name
 
-rem cls 
-
 IF "%1"=="" exit /b
 
 echo.
-echo             processing [101;93m%1[0m in folder %2 
+echo             processing [101;93m%1[0m in folder %2
 
 
 SET ThisScriptsDirectory=%~dp0
@@ -36,109 +34,206 @@ if %ERRORLEVEL% neq 0 (
 set myaccount=migrate
 set mypassword=migrate
 
+rem FileMaker Server settings
+set fmhost=localhost
+set dbfilename=%1.fmp12
 
 if "%~1"=="" goto END0
 if "%~2"=="" goto END0
 
+rem ============================================
+rem Step 1: Login to FileMaker Server Admin API
+rem ============================================
+echo.
+echo [102;30mStep 1: Authenticating with FileMaker Server...[0m
 
-fmsadmin list files -u%fmaccount% -p%fmpassword% >> %log%
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%"') do set fmtoken=%%i
 
-rem close the file if it is in the list of open files written to the log
-findstr /i "%1.fmp12" %log% >> test.txt
-if %errorlevel%==0 GOTO CLOSEFILE 
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to authenticate with FileMaker Server[0m
+    echo [101;93mCannot proceed with update[0m
+    exit /b 1
+)
 
-:CLOSE0
+echo Token obtained successfully >> %log%
 
+rem ============================================
+rem Step 2: Close the database (force disconnect)
+rem ============================================
+echo.
+echo [102;30mStep 2: Closing database %dbfilename%...[0m
 
+powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation close -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" -ForceDisconnect -GracePeriod 0 >> %log% 2>&1
+
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to close database %dbfilename%[0m
+    echo [101;93mCannot proceed with update - database may be in use or not found[0m
+
+    rem Logout from API
+    powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    goto END0
+)
+
+echo Database closed successfully
+echo Database closed successfully >> %log%
+
+rem ============================================
+rem Step 3: Copy live database to source folder
+rem ============================================
+echo.
+echo [102;30mStep 3: Copying live database to working directory...[0m
+
+echo "copy live to source folder"
+copy "%live%%2\%1.fmp12" "%sourcefolder%source\" >> %log% 2>&1
+
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to copy live database to source folder[0m
+
+    rem Try to reopen the database before exiting
+    echo Attempting to reopen database...
+    powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" >> %log% 2>&1
+
+    rem Logout from API
+    powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    exit /b 1
+)
+
+rem ============================================
+rem Step 4: Prepare for migration
+rem ============================================
 For /f "tokens=2-4 delims=/ " %%a in ('date /t') do (set mydate=%%c-%%a-%%b)
 set backup_stamp=%mydate%
 
-echo "delete %tgt%"
-del /q "%tgt%"
+echo "delete previous target %tgt%"
+del /q "%tgt%" 2>nul
 
 if NOT EXIST %bak% (mkdir "%bak%")
 
-rem copy file to backup and old directory
-
-echo "copy live to source folder"
-copy "%live%%2\%1.fmp12" "%sourcefolder%source\"
-
-rem     6 Nov 2023 changed to overwrite backup
-rem     9 Feb 2025 turned off backup
-rem     copy "%live%%2\%1.fmp12" "%bak%\%1.fmp12.%backup_stamp%"
-rem copy "%live%%2\%1.fmp12" "%bak%\"
-
+rem ============================================
+rem Step 5: Run FileMaker Data Migration
+rem ============================================
+echo.
+echo [102;30mStep 4: Running FileMaker Data Migration...[0m
 echo "migrating"
-FMDataMigration -src_path %src% -clone_path %cln% -src_account %myaccount% -src_pwd %mypassword% -clone_account %myaccount% -clone_pwd %mypassword% -target_path %tgt% -ignore_valuelists  >>%log%
+
+FMDataMigration -src_path %src% -clone_path %cln% -src_account %myaccount% -src_pwd %mypassword% -clone_account %myaccount% -clone_pwd %mypassword% -target_path %tgt% -ignore_valuelists >>%log% 2>&1
+
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo [101;93mERROR: FileMaker Data Migration FAILED[0m
+    echo [101;93m
+    findstr /C:"error" /C:"Error" /C:"ERROR" /C:"failed" /C:"Failed" %log%
+    echo [0m
+
+    rem Discard changes - delete failed target
+    echo Discarding failed migration output...
+    del /q "%tgt%" 2>nul
+
+    rem Reopen the original database
+    echo Reopening original database...
+    powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" >> %log% 2>&1
+
+    if %ERRORLEVEL% neq 0 (
+        echo [101;93mWARNING: Failed to reopen database - manual intervention required[0m
+    ) else (
+        echo Database reopened successfully
+    )
+
+    rem Logout from API
+    powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    echo.
+    echo [101;93mUpdate aborted due to migration failure[0m
+    exit /b 1
+)
 
 echo.
-
-echo [101;93m 
-
+echo "Migration completed - checking for errors..."
+echo [101;93m
 findstr "error not invalid" %log%
-echo [0m
+echo [0m
 echo.
 
-rem put into production
-echo "delete (old) live" 
-del "%live%%2\%1.fmp12"
+rem ============================================
+rem Step 6: Remove old database from live folder
+rem ============================================
+echo.
+echo [102;30mStep 5: Removing old database from server...[0m
+
+echo "delete (old) live"
+del "%live%%2\%1.fmp12" >> %log% 2>&1
+
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mWARNING: Failed to delete old database file[0m
+    rem Continue anyway - we'll try to overwrite
+)
+
+rem ============================================
+rem Step 7: Copy updated database to live folder
+rem ============================================
+echo.
+echo [102;30mStep 6: Copying updated database to server...[0m
 
 echo "copy updated file back to live"
-copy "%tgt%" "%live%%2\"
-@echo off
+copy "%tgt%" "%live%%2\" >> %log% 2>&1
 
-fmsadmin open %1.fmp12  -yf -u%fmaccount% -p%fmpassword% >> %log%
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to copy updated database to live folder[0m
+    echo [101;93mCRITICAL: Database is closed but new version not deployed[0m
+
+    rem Logout from API
+    powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    exit /b 1
+)
+
+rem ============================================
+rem Step 8: Open the updated database
+rem ============================================
+echo.
+echo [102;30mStep 7: Opening updated database...[0m
+
+powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" >> %log% 2>&1
+
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to open updated database[0m
+    echo [101;93mManual intervention may be required[0m
+
+    rem Logout from API
+    powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    exit /b 1
+)
+
+echo Database opened successfully
+echo Database opened successfully >> %log%
+
+rem Wait for database to fully open
 timeout /t 6 /nobreak
-rem ping -n 4 127.0.0.1>nul
 
+rem ============================================
+rem Step 9: Logout from FileMaker Server Admin API
+rem ============================================
+echo.
+echo [102;30mStep 8: Logging out from FileMaker Server...[0m
 
+powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
-
-
-
-GOTO END0
-
-
-
-:CLOSEFILE
-
-rem only force disconnect when updating all clients out of business hours
-rem echo "force disconnect clients"
-rem fmsadmin disconnect client -yf -t 0 -u%fmaccount% -p%fmpassword% >> %log%
-
-echo "closing %1"
-fmsadmin close %1.fmp12  -y -f -t 0 -u%fmaccount% -p%fmpassword% >> %log%
-timeout /t 12 /nobreak
-
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mWARNING: Logout failed (token may expire automatically)[0m
+)
 
 echo.
+echo [102;30m===================================================[0m
+echo [102;30mUpdate completed successfully for %dbfilename%[0m
+echo [102;30m===================================================[0m
+echo.
 
-rem check that the file actually closed
-rem type %log% | findstr "File Closed: %1.fmp12"
-findstr "File Closed: %1.fmp12" %log%
-if NOT %errorlevel%==0 GOTO CANTCLOSE
-
-GOTO CLOSE0
-
-
-
-:CANTCLOSE
-
-echo [101;93m 
-echo "can't close %1.fmp12"
-echo [0m
-echo "can't close %1.fmp12" >> %log%
-fmsadmin open %1.fmp12  -yf -u%fmaccount% -p%fmpassword%
-
-echo "skipped file %1.fmp12" >> %log%
-echo "skipped file %1.fmp12" >> skipped.txt
-
-echo "end %1"
+GOTO END0
 
 :END0
 
 echo.
 echo.
-
-rem type %log%
-
