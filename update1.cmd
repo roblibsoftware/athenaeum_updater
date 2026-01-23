@@ -1,6 +1,6 @@
 @echo off
 rem Enable ANSI color support
-for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ESC=%%A"
 
 rem Download clone file first
 call download_clone.cmd

@@ -3,7 +3,7 @@ rem Clear FileMaker credentials helper
 rem This is a wrapper that properly calls the PowerShell script
 
 rem Enable ANSI color support
-for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ESC=%%A"
 
 echo FileMaker Credential Removal
 echo ================================

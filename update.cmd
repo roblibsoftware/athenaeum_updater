@@ -5,8 +5,8 @@ rem   Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 rem   https://creativecommons.org/licenses/by-sa/4.0/
 
 rem Enable ANSI color support on Windows 10+ (Virtual Terminal Processing)
-rem This allows color codes to work in the console
-for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+rem Generate ESC character (ASCII 27) for ANSI color codes
+for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ESC=%%A"
 
 rem %1 is file name  %2 is folder name
 

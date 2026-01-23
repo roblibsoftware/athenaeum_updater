@@ -5,7 +5,7 @@ rem   Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 rem   https://creativecommons.org/licenses/by-sa/4.0/
 
 rem Enable ANSI color support
-for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ESC=%%A"
 
 call download_clone.cmd
 
