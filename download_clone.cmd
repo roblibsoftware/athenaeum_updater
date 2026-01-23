@@ -4,6 +4,9 @@ rem   Creative Commons licence
 rem   Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 rem   https://creativecommons.org/licenses/by-sa/4.0/
 
+rem Enable ANSI color support
+for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+
 cls
 SET downloadurl="https://librarysoftware.co.nz/download/up/athenaeum_clone.fmp12.zip"
 SET clonefile=athenaeum_clone.fmp12
@@ -17,12 +20,12 @@ SET unzipper="C:\Program Files\7-Zip\7z.exe"
 
 rem Check if required tools exist
 if not exist %curl% (
-    echo [101;93mERROR: curl.exe not found at %curl%[0m
+    echo %ESC%[101;93mERROR: curl.exe not found at %curl%%ESC%[0m
     exit /b 1
 )
 
 if not exist %unzipper% (
-    echo [101;93mERROR: 7z.exe not found at %unzipper%[0m
+    echo %ESC%[101;93mERROR: 7z.exe not found at %unzipper%%ESC%[0m
     exit /b 2
 )
 
@@ -39,14 +42,14 @@ echo Downloading clone file...
 rem Download the zipped clone file
 %curl% %downloadurl% --output %downloadzip% --fail --silent --show-error
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to download file from %downloadurl%[0m
-    echo [101;93mCurl exit code: %ERRORLEVEL%[0m
+    echo %ESC%[101;93mERROR: Failed to download file from %downloadurl%%ESC%[0m
+    echo %ESC%[101;93mCurl exit code: %ERRORLEVEL%%ESC%[0m
     exit /b 3
 )
 
 rem Verify the download exists
 if not exist %downloadzip% (
-    echo [101;93mERROR: Downloaded file not found: %downloadzip%[0m
+    echo %ESC%[101;93mERROR: Downloaded file not found: %downloadzip%%ESC%[0m
     exit /b 4
 )
 
@@ -55,8 +58,8 @@ echo Unzipping file...
 rem Unzip it
 %unzipper% x %downloadzip% %clonefile% -o"%sourcefolder%" -y > zip.log 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to unzip file[0m
-    echo [101;93m7-Zip exit code: %ERRORLEVEL%[0m
+    echo %ESC%[101;93mERROR: Failed to unzip file%ESC%[0m
+    echo %ESC%[101;93m7-Zip exit code: %ERRORLEVEL%%ESC%[0m
     type zip.log
     exit /b 5
 )
@@ -64,17 +67,17 @@ if %ERRORLEVEL% neq 0 (
 rem Check for successful extraction
 findstr /c:"Everything is Ok" zip.log >nul
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Extraction did not complete successfully[0m
+    echo %ESC%[101;93mERROR: Extraction did not complete successfully%ESC%[0m
     type zip.log
     exit /b 6
 )
 
-echo [102;30mExtraction successful[0m
+echo %ESC%[102;30mExtraction successful%ESC%[0m
 
 rem Move it into the clone folder
 move /y %clonefile% clone >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to move file to clone folder[0m
+    echo %ESC%[101;93mERROR: Failed to move file to clone folder%ESC%[0m
     exit /b 7
 )
 
@@ -83,13 +86,13 @@ del /q %downloadzip% 2>nul
 del /q zip.log 2>nul
 
 echo.
-echo [102;30mClone file downloaded and extracted successfully[0m
+echo %ESC%[102;30mClone file downloaded and extracted successfully%ESC%[0m
 echo.
 
 rem Case insensitive grep the directory looking for the word "athen"
 echo Files in clone directory:
-echo [101;93m
+echo %ESC%[101;93m
 dir clone\a*.* | findstr /I "athen"
-echo [0m
+echo %ESC%[0m
 
 exit /b 0

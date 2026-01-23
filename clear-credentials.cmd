@@ -2,6 +2,9 @@
 rem Clear FileMaker credentials helper
 rem This is a wrapper that properly calls the PowerShell script
 
+rem Enable ANSI color support
+for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+
 echo FileMaker Credential Removal
 echo ================================
 echo.
@@ -15,12 +18,12 @@ if /i "%confirm%"=="yes" (
     if exist fmcreds.encrypted (
         del /q fmcreds.encrypted
         echo.
-        echo [102;30mSUCCESS: Encrypted credentials have been removed.[0m
+        echo %ESC%[102;30mSUCCESS: Encrypted credentials have been removed.%ESC%[0m
         echo.
         echo To create new credentials, run: store-credentials.cmd
     ) else (
         echo.
-        echo [101;93mNo credential file found.[0m
+        echo %ESC%[101;93mNo credential file found.%ESC%[0m
         echo Nothing to clear.
     )
 ) else (

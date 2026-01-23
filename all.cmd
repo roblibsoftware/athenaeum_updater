@@ -4,13 +4,16 @@ rem   Creative Commons licence
 rem   Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 rem   https://creativecommons.org/licenses/by-sa/4.0/
 
+rem Enable ANSI color support
+for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+
 call download_clone.cmd
 
 rem Check if download_clone failed
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo [101;93mERROR: download_clone.cmd failed with error code %ERRORLEVEL%[0m
-    echo [101;93mAborting update process.[0m
+    echo %ESC%[101;93mERROR: download_clone.cmd failed with error code %ERRORLEVEL%%ESC%[0m
+    echo %ESC%[101;93mAborting update process.%ESC%[0m
     echo.
     pause
     exit /b %ERRORLEVEL%
@@ -23,13 +26,13 @@ SET clonepath="%sourcefolder%clone\%clonefile%"
 rem Retrieve credentials from encrypted storage using PowerShell
 for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0get-fmcreds.ps1"') do %%i
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to retrieve credentials[0m
+    echo %ESC%[101;93mERROR: Failed to retrieve credentials%ESC%[0m
     exit /b 1
 )
 
 
 IF NOT EXIST %clonepath% (
-    Echo [101;93m%clonepath not downloaded, aborting[0m
+    Echo %ESC%[101;93m%clonepath not downloaded, aborting%ESC%[0m
     exit /b 1
  )
 
@@ -37,7 +40,7 @@ rem Remove previous skipped file log
 IF EXIST skipped.txt del skipped.txt
 
 echo.
-echo [102;30mStarting batch update of all databases...[0m
+echo %ESC%[102;30mStarting batch update of all databases...%ESC%[0m
 echo.
 
 rem Note: Client disconnect is now handled by update.cmd for each specific database
@@ -60,7 +63,7 @@ for /F "usebackq tokens=1,2" %%i in (master_file_list.txt) do (
 
                 rem Check if update.cmd failed
                 if %ERRORLEVEL% neq 0 (
-                    echo [101;93mWARNING: update.cmd failed for %%i %%j with error code %ERRORLEVEL%[0m
+                    echo %ESC%[101;93mWARNING: update.cmd failed for %%i %%j with error code %ERRORLEVEL%%ESC%[0m
                     echo %%i %%j failed with error code %ERRORLEVEL% >> skipped.txt
                     rem Uncomment next line to abort on first update.cmd error:
                     rem exit /b %ERRORLEVEL%
@@ -73,19 +76,19 @@ for /F "usebackq tokens=1,2" %%i in (master_file_list.txt) do (
 rem List log lines that include "open", "close", "Start"
 echo.
 echo.
-echo [102;30mSummary of operations:[0m
+echo %ESC%[102;30mSummary of operations:%ESC%[0m
 findstr /I "open clos Start" log\*.txt
 
 echo.
-echo [101;93m
+echo %ESC%[101;93m
 IF EXIST skipped.txt (
     echo Files that failed to update:
     TYPE skipped.txt
 ) ELSE (
     echo All files updated successfully
 )
-echo [0m
+echo %ESC%[0m
 
 echo.
-echo [102;30mBatch update process complete.[0m
+echo %ESC%[102;30mBatch update process complete.%ESC%[0m
 exit /b 0

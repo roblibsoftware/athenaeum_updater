@@ -4,12 +4,16 @@ rem   Creative Commons licence
 rem   Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 rem   https://creativecommons.org/licenses/by-sa/4.0/
 
+rem Enable ANSI color support on Windows 10+ (Virtual Terminal Processing)
+rem This allows color codes to work in the console
+for /F "tokens=* USEBACKQ" %%F in (`powershell -NoProfile -Command "write-host([char]27) -NoNewLine"`) do (set "ESC=%%F")
+
 rem %1 is file name  %2 is folder name
 
 IF "%1"=="" exit /b
 
 echo.
-echo             processing [101;93m%1[0m in folder %2
+echo             processing %ESC%[101;93m%1%ESC%[0m in folder %2
 
 
 SET ThisScriptsDirectory=%~dp0
@@ -29,7 +33,7 @@ if NOT EXIST "%sourcefolder%source" (
     echo Creating source directory...
     mkdir "%sourcefolder%source"
     if %ERRORLEVEL% neq 0 (
-        echo [101;93mERROR: Failed to create source directory[0m
+        echo %ESC%[101;93mERROR: Failed to create source directory%ESC%[0m
         exit /b 1
     )
 )
@@ -38,7 +42,7 @@ if NOT EXIST "%sourcefolder%backup" (
     echo Creating backup directory...
     mkdir "%sourcefolder%backup"
     if %ERRORLEVEL% neq 0 (
-        echo [101;93mERROR: Failed to create backup directory[0m
+        echo %ESC%[101;93mERROR: Failed to create backup directory%ESC%[0m
         exit /b 1
     )
 )
@@ -47,7 +51,7 @@ if NOT EXIST "%sourcefolder%clone" (
     echo Creating clone directory...
     mkdir "%sourcefolder%clone"
     if %ERRORLEVEL% neq 0 (
-        echo [101;93mERROR: Failed to create clone directory[0m
+        echo %ESC%[101;93mERROR: Failed to create clone directory%ESC%[0m
         exit /b 1
     )
 )
@@ -56,7 +60,7 @@ if NOT EXIST "%sourcefolder%new" (
     echo Creating new directory...
     mkdir "%sourcefolder%new"
     if %ERRORLEVEL% neq 0 (
-        echo [101;93mERROR: Failed to create new directory[0m
+        echo %ESC%[101;93mERROR: Failed to create new directory%ESC%[0m
         exit /b 1
     )
 )
@@ -65,7 +69,7 @@ if NOT EXIST "%sourcefolder%log" (
     echo Creating log directory...
     mkdir "%sourcefolder%log"
     if %ERRORLEVEL% neq 0 (
-        echo [101;93mERROR: Failed to create log directory[0m
+        echo %ESC%[101;93mERROR: Failed to create log directory%ESC%[0m
         exit /b 1
     )
 )
@@ -80,7 +84,7 @@ set live=A:\live_databases\
 rem Retrieve credentials from encrypted storage using PowerShell
 for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0get-fmcreds.ps1"') do %%i
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to retrieve credentials[0m
+    echo %ESC%[101;93mERROR: Failed to retrieve credentials%ESC%[0m
     exit /b 1
 )
 
@@ -98,13 +102,13 @@ rem ============================================
 rem Step 1: Login to FileMaker Server Admin API
 rem ============================================
 echo.
-echo [102;30mStep 1: Authenticating with FileMaker Server...[0m
+echo %ESC%[102;30mStep 1: Authenticating with FileMaker Server...%ESC%[0m
 
 for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%"') do set fmtoken=%%i
 
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to authenticate with FileMaker Server[0m
-    echo [101;93mCannot proceed with update[0m
+    echo %ESC%[101;93mERROR: Failed to authenticate with FileMaker Server%ESC%[0m
+    echo %ESC%[101;93mCannot proceed with update%ESC%[0m
     exit /b 1
 )
 
@@ -114,13 +118,13 @@ rem ============================================
 rem Step 2: Close the database (force disconnect)
 rem ============================================
 echo.
-echo [102;30mStep 2: Closing database %dbfilename%...[0m
+echo %ESC%[102;30mStep 2: Closing database %dbfilename%...%ESC%[0m
 
 powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation close -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" -ForceDisconnect -GracePeriod 0 >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to close database %dbfilename%[0m
-    echo [101;93mCannot proceed with update - database may be in use or not found[0m
+    echo %ESC%[101;93mERROR: Failed to close database %dbfilename%%ESC%[0m
+    echo %ESC%[101;93mCannot proceed with update - database may be in use or not found%ESC%[0m
 
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
@@ -135,13 +139,13 @@ rem ============================================
 rem Step 3: Copy live database to source folder
 rem ============================================
 echo.
-echo [102;30mStep 3: Copying live database to working directory...[0m
+echo %ESC%[102;30mStep 3: Copying live database to working directory...%ESC%[0m
 
 echo "copy live to source folder"
 copy "%live%%2\%1.fmp12" "%sourcefolder%source\" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to copy live database to source folder[0m
+    echo %ESC%[101;93mERROR: Failed to copy live database to source folder%ESC%[0m
 
     rem Try to reopen the database before exiting
     echo Attempting to reopen database...
@@ -166,17 +170,17 @@ rem ============================================
 rem Step 5: Run FileMaker Data Migration
 rem ============================================
 echo.
-echo [102;30mStep 4: Running FileMaker Data Migration...[0m
+echo %ESC%[102;30mStep 4: Running FileMaker Data Migration...%ESC%[0m
 echo "migrating"
 
 FMDataMigration -src_path %src% -clone_path %cln% -src_account %myaccount% -src_pwd %mypassword% -clone_account %myaccount% -clone_pwd %mypassword% -target_path %tgt% -ignore_valuelists >>%log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo [101;93mERROR: FileMaker Data Migration FAILED[0m
-    echo [101;93m
+    echo %ESC%[101;93mERROR: FileMaker Data Migration FAILED%ESC%[0m
+    echo %ESC%[101;93m
     findstr /C:"error" /C:"Error" /C:"ERROR" /C:"failed" /C:"Failed" %log%
-    echo [0m
+    echo %ESC%[0m
 
     rem Discard changes - delete failed target
     echo Discarding failed migration output...
@@ -187,7 +191,7 @@ if %ERRORLEVEL% neq 0 (
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" >> %log% 2>&1
 
     if %ERRORLEVEL% neq 0 (
-        echo [101;93mWARNING: Failed to reopen database - manual intervention required[0m
+        echo %ESC%[101;93mWARNING: Failed to reopen database - manual intervention required%ESC%[0m
     ) else (
         echo Database reopened successfully
     )
@@ -196,28 +200,28 @@ if %ERRORLEVEL% neq 0 (
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
     echo.
-    echo [101;93mUpdate aborted due to migration failure[0m
+    echo %ESC%[101;93mUpdate aborted due to migration failure%ESC%[0m
     exit /b 1
 )
 
 echo.
 echo "Migration completed - checking for errors..."
-echo [101;93m
+echo %ESC%[101;93m
 findstr "error not invalid" %log%
-echo [0m
+echo %ESC%[0m
 echo.
 
 rem ============================================
 rem Step 6: Remove old database from live folder
 rem ============================================
 echo.
-echo [102;30mStep 5: Removing old database from server...[0m
+echo %ESC%[102;30mStep 5: Removing old database from server...%ESC%[0m
 
 echo "delete (old) live"
 del "%live%%2\%1.fmp12" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mWARNING: Failed to delete old database file[0m
+    echo %ESC%[101;93mWARNING: Failed to delete old database file%ESC%[0m
     rem Continue anyway - we'll try to overwrite
 )
 
@@ -225,14 +229,14 @@ rem ============================================
 rem Step 7: Copy updated database to live folder
 rem ============================================
 echo.
-echo [102;30mStep 6: Copying updated database to server...[0m
+echo %ESC%[102;30mStep 6: Copying updated database to server...%ESC%[0m
 
 echo "copy updated file back to live"
 copy "%tgt%" "%live%%2\" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to copy updated database to live folder[0m
-    echo [101;93mCRITICAL: Database is closed but new version not deployed[0m
+    echo %ESC%[101;93mERROR: Failed to copy updated database to live folder%ESC%[0m
+    echo %ESC%[101;93mCRITICAL: Database is closed but new version not deployed%ESC%[0m
 
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
@@ -244,13 +248,13 @@ rem ============================================
 rem Step 8: Open the updated database
 rem ============================================
 echo.
-echo [102;30mStep 7: Opening updated database...[0m
+echo %ESC%[102;30mStep 7: Opening updated database...%ESC%[0m
 
 powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mERROR: Failed to open updated database[0m
-    echo [101;93mManual intervention may be required[0m
+    echo %ESC%[101;93mERROR: Failed to open updated database%ESC%[0m
+    echo %ESC%[101;93mManual intervention may be required%ESC%[0m
 
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
@@ -268,18 +272,18 @@ rem ============================================
 rem Step 9: Logout from FileMaker Server Admin API
 rem ============================================
 echo.
-echo [102;30mStep 8: Logging out from FileMaker Server...[0m
+echo %ESC%[102;30mStep 8: Logging out from FileMaker Server...%ESC%[0m
 
 powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
-    echo [101;93mWARNING: Logout failed (token may expire automatically)[0m
+    echo %ESC%[101;93mWARNING: Logout failed (token may expire automatically)%ESC%[0m
 )
 
 echo.
-echo [102;30m===================================================[0m
-echo [102;30mUpdate completed successfully for %dbfilename%[0m
-echo [102;30m===================================================[0m
+echo %ESC%[102;30m===================================================%ESC%[0m
+echo %ESC%[102;30mUpdate completed successfully for %dbfilename%%ESC%[0m
+echo %ESC%[102;30m===================================================%ESC%[0m
 echo.
 
 GOTO END0
