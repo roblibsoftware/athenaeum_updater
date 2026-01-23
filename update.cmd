@@ -20,6 +20,59 @@ SET cln="%sourcefolder%clone\athenaeum_clone.fmp12"
 SET tgt="%sourcefolder%new\%1.fmp12"
 SET log="%sourcefolder%log\%1.txt"
 
+rem ============================================
+rem Create required directories if they don't exist
+rem ============================================
+echo Checking required directories...
+
+if NOT EXIST "%sourcefolder%source" (
+    echo Creating source directory...
+    mkdir "%sourcefolder%source"
+    if %ERRORLEVEL% neq 0 (
+        echo [101;93mERROR: Failed to create source directory[0m
+        exit /b 1
+    )
+)
+
+if NOT EXIST "%sourcefolder%backup" (
+    echo Creating backup directory...
+    mkdir "%sourcefolder%backup"
+    if %ERRORLEVEL% neq 0 (
+        echo [101;93mERROR: Failed to create backup directory[0m
+        exit /b 1
+    )
+)
+
+if NOT EXIST "%sourcefolder%clone" (
+    echo Creating clone directory...
+    mkdir "%sourcefolder%clone"
+    if %ERRORLEVEL% neq 0 (
+        echo [101;93mERROR: Failed to create clone directory[0m
+        exit /b 1
+    )
+)
+
+if NOT EXIST "%sourcefolder%new" (
+    echo Creating new directory...
+    mkdir "%sourcefolder%new"
+    if %ERRORLEVEL% neq 0 (
+        echo [101;93mERROR: Failed to create new directory[0m
+        exit /b 1
+    )
+)
+
+if NOT EXIST "%sourcefolder%log" (
+    echo Creating log directory...
+    mkdir "%sourcefolder%log"
+    if %ERRORLEVEL% neq 0 (
+        echo [101;93mERROR: Failed to create log directory[0m
+        exit /b 1
+    )
+)
+
+echo All required directories present
+echo.
+
 echo "delete log file %log%"
 del /q %log%
 set live=A:\live_databases\
@@ -108,8 +161,6 @@ set backup_stamp=%mydate%
 
 echo "delete previous target %tgt%"
 del /q "%tgt%" 2>nul
-
-if NOT EXIST %bak% (mkdir "%bak%")
 
 rem ============================================
 rem Step 5: Run FileMaker Data Migration
