@@ -9,7 +9,13 @@ call download_clone.cmd
 SET clonefile=athenaeum_clone.fmp12
 SET ThisScriptsDirectory=%~dp0
 SET clonepath="%sourcefolder%clone\%clonefile%"
-call "B:\up\setlog.cmd"
+
+rem Retrieve credentials from encrypted storage using PowerShell
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0get-fmcreds.ps1"') do %%i
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to retrieve credentials[0m
+    exit /b 1
+)
 
 
 IF NOT EXIST %clonepath% (

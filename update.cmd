@@ -25,7 +25,14 @@ SET log="%sourcefolder%log\%1.txt"
 echo "delete log file %log%"
 del /q %log%
 set live=A:\live_databases\
-call "B:\up\setlog.cmd"
+
+rem Retrieve credentials from encrypted storage using PowerShell
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0get-fmcreds.ps1"') do %%i
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to retrieve credentials[0m
+    exit /b 1
+)
+
 set myaccount=migrate
 set mypassword=migrate
 

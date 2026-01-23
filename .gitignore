@@ -17,3 +17,8 @@ clone/
 
 # Zip files
 *.zip
+
+# Credential files (SECURITY: Never commit these!)
+setlog.cmd
+fmcreds.encrypted
+*.encrypted
