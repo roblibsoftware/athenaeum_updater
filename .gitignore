@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Log files
+*.log
+zip.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Clone directory (downloaded files)
+clone/
+
+# Zip files
+*.zip

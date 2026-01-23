@@ -15,33 +15,81 @@ SET downloadfile="%sourcefolder%clone\%clonefile%"
 SET curl="C:\Program Files\curl\bin\curl.exe"
 SET unzipper="C:\Program Files\7-Zip\7z.exe"
 
-del /q zip.log
-del /q %downloadzip%
-del /q %downloadfile%
+rem Check if required tools exist
+if not exist %curl% (
+    echo [101;93mERROR: curl.exe not found at %curl%[0m
+    exit /b 1
+)
+
+if not exist %unzipper% (
+    echo [101;93mERROR: 7z.exe not found at %unzipper%[0m
+    exit /b 2
+)
+
+rem Create clone directory if it doesn't exist
+if not exist clone mkdir clone
+
+del /q zip.log 2>nul
+del /q %downloadzip% 2>nul
+del /q %downloadfile% 2>nul
 
 echo.
+echo Downloading clone file...
 
-rem     download the zipped clone file
-%curl% %downloadurl% --output %downloadzip%
+rem Download the zipped clone file
+%curl% %downloadurl% --output %downloadzip% --fail --silent --show-error
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to download file from %downloadurl%[0m
+    echo [101;93mCurl exit code: %ERRORLEVEL%[0m
+    exit /b 3
+)
 
-rem     unzip it
-%unzipper% x %downloadzip% %clonefile% > zip.log
+rem Verify the download exists
+if not exist %downloadzip% (
+    echo [101;93mERROR: Downloaded file not found: %downloadzip%[0m
+    exit /b 4
+)
 
-echo [101;93m 
-findstr /c:"Everything is Ok" zip.log
-echo [0m
+echo Unzipping file...
 
-rem     move it into the clone folder
-move /y %clonefile% clone
+rem Unzip it
+%unzipper% x %downloadzip% %clonefile% -o"%sourcefolder%" -y > zip.log 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to unzip file[0m
+    echo [101;93m7-Zip exit code: %ERRORLEVEL%[0m
+    type zip.log
+    exit /b 5
+)
 
-del /q %downloadzip%
+rem Check for successful extraction
+findstr /c:"Everything is Ok" zip.log >nul
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Extraction did not complete successfully[0m
+    type zip.log
+    exit /b 6
+)
+
+echo [102;30mExtraction successful[0m
+
+rem Move it into the clone folder
+move /y %clonefile% clone >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo [101;93mERROR: Failed to move file to clone folder[0m
+    exit /b 7
+)
+
+rem Clean up
+del /q %downloadzip% 2>nul
+del /q zip.log 2>nul
 
 echo.
+echo [102;30mClone file downloaded and extracted successfully[0m
 echo.
 
-rem     case insensitive grep the directory looking for the word "athen" (as in "athenaeum")
-echo [101;93m 
-dir clone\a*.* | findstr /I "athen" 
-echo [0m
+rem Case insensitive grep the directory looking for the word "athen"
+echo Files in clone directory:
+echo [101;93m
+dir clone\a*.* | findstr /I "athen"
+echo [0m
 
-dir *.cmd
+exit /b 0
