@@ -38,10 +38,22 @@ The system uses **Windows Data Protection API (DPAPI)**, which:
 
 ### Step 1: Store Credentials (One-Time)
 
-Run the storage script from PowerShell as the Windows user that will run the update scripts:
+Run the storage script as the Windows user that will run the update scripts:
 
+**Method 1: Using the batch wrapper (Recommended - easiest)**
+```batch
+cd B:\up
+store-credentials.cmd
+```
+
+**Method 2: Using PowerShell directly**
 ```powershell
 cd B:\up
+powershell -ExecutionPolicy Bypass -File .\store-fmcreds.ps1
+```
+
+Or from within PowerShell (if file is unblocked):
+```powershell
 .\store-fmcreds.ps1
 ```
 
@@ -76,8 +88,14 @@ IMPORTANT SECURITY NOTES:
 
 Test that credentials can be retrieved:
 
+**Method 1: Using the batch wrapper (Recommended)**
+```batch
+test-credentials.cmd
+```
+
+**Method 2: Using PowerShell directly**
 ```powershell
-.\get-fmcreds.ps1
+powershell -ExecutionPolicy Bypass -File .\get-fmcreds.ps1
 ```
 
 **Expected output:**
@@ -135,15 +153,38 @@ The following scripts now use encrypted credentials:
 ### update1.cmd
 - Calls update.cmd (which retrieves credentials)
 
+## User-Friendly Batch File Wrappers
+
+For easier use, batch file wrappers are provided that handle all the PowerShell execution policy complexities:
+
+| Batch File | Purpose | Usage |
+|------------|---------|-------|
+| **store-credentials.cmd** | Set up credentials (one-time) | Double-click or run from CMD |
+| **test-credentials.cmd** | Test if credentials work | Double-click or run from CMD |
+| **clear-credentials.cmd** | Remove stored credentials | Double-click or run from CMD |
+
+**Benefits:**
+- No need to remember `-ExecutionPolicy Bypass`
+- Works from CMD, PowerShell, or double-click
+- Input prompts work correctly (no nested session issues)
+- Easy to remember and use
+
+**Recommendation:** Use the `.cmd` files for interactive credential management, and let the update scripts handle the PowerShell calls automatically.
+
 ## Troubleshooting
 
 ### Error: "Credential file not found"
 
 **Cause:** The `fmcreds.encrypted` file doesn't exist.
 
-**Solution:** Run `store-fmcreds.ps1` to create it:
+**Solution:** Run the storage script to create it:
+```batch
+store-credentials.cmd
+```
+
+Or using PowerShell:
 ```powershell
-.\store-fmcreds.ps1
+powershell -ExecutionPolicy Bypass -File .\store-fmcreds.ps1
 ```
 
 ### Error: "Failed to retrieve credentials" or Decryption Error
@@ -157,11 +198,78 @@ The following scripts now use encrypted credentials:
 
 ### Error: PowerShell Execution Policy
 
-**Cause:** PowerShell execution policy prevents running scripts.
+**Cause:** PowerShell execution policy prevents running scripts directly.
 
-**Solution:** The batch scripts use `-ExecutionPolicy Bypass` flag, which should work. If it still fails, run as Administrator:
+**Error Message:**
+```
+File B:\api_updater\store-fmcreds.ps1 cannot be loaded. The file is not digitally signed.
+You cannot run this script on the current system.
+```
+
+**Solutions:**
+
+**Option 1: Use the batch file wrappers (Easiest)**
+```batch
+store-credentials.cmd
+test-credentials.cmd
+clear-credentials.cmd
+```
+
+**Option 2: Unblock the PowerShell files**
+```powershell
+Unblock-File .\store-fmcreds.ps1
+Unblock-File .\get-fmcreds.ps1
+Unblock-File .\clear-fmcreds.ps1
+Unblock-File .\fmadmin-api.ps1
+```
+
+**Option 3: Change execution policy**
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Option 4: Always use -ExecutionPolicy Bypass flag**
+```powershell
+powershell -ExecutionPolicy Bypass -File .\store-fmcreds.ps1
+```
+
+**Note:** The batch scripts (update.cmd, all.cmd, etc.) already use the `-ExecutionPolicy Bypass` flag, so they will work without any changes.
+
+### Error: Script stops and won't accept input
+
+**Symptoms:**
+- Script displays prompt but cursor doesn't blink
+- Cannot type any input
+- Script appears frozen
+
+**Cause:** Running PowerShell from within PowerShell creates a nested session that can't read input properly.
+
+**Example of problem:**
+```powershell
+PS B:\api_updater> powershell -ExecutionPolicy Bypass -File .\clear-fmcreds.ps1
+# Script displays prompt but won't accept input
+```
+
+**Solutions:**
+
+**Option 1: Use the batch file wrapper (Best)**
+```batch
+clear-credentials.cmd
+```
+
+**Option 2: Run from Command Prompt (not PowerShell)**
+- Close PowerShell
+- Open Command Prompt (CMD)
+- Run: `powershell -ExecutionPolicy Bypass -File .\clear-fmcreds.ps1`
+
+**Option 3: Run directly if file is unblocked**
+```powershell
+.\clear-fmcreds.ps1
+```
+
+**Option 4: Use -Force to skip the prompt**
+```powershell
+powershell -ExecutionPolicy Bypass -File .\clear-fmcreds.ps1 -Force
 ```
 
 ### Scheduled Tasks Not Working
