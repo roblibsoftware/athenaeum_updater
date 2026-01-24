@@ -67,21 +67,28 @@ Write-Host "----------------------------------------" -ForegroundColor Yellow
 $authUrl = "https://athenaeum.nz/fmi/admin/api/v2/user/auth"
 Write-Host "URL: $authUrl"
 
-$body = @{
+$bodyObject = @{
     username = $fmaccount
     password = $fmpassword
-} | ConvertTo-Json
+}
 
-Write-Host "Request Body:"
-Write-Host $body
+$bodyJson = $bodyObject | ConvertTo-Json -Compress
+Write-Host "Request Body (JSON):"
+Write-Host $bodyJson
+Write-Host ""
+
+# Convert to UTF-8 bytes explicitly
+$bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyJson)
+Write-Host "Body size: $($bodyBytes.Length) bytes (UTF-8)" -ForegroundColor Gray
 Write-Host ""
 
 $headers = @{
-    'Content-Type' = 'application/json'
+    'Content-Type' = 'application/json; charset=utf-8'
+    'Accept' = 'application/json'
 }
 
 try {
-    $response = Invoke-WebRequest -Uri $authUrl -Method Post -Headers $headers -Body $body -UseBasicParsing
+    $response = Invoke-WebRequest -Uri $authUrl -Method Post -Headers $headers -Body $bodyBytes -UseBasicParsing
     Write-Host "SUCCESS!" -ForegroundColor Green
     Write-Host "Status: $($response.StatusCode)" -ForegroundColor Green
     Write-Host "Response:" -ForegroundColor Green
@@ -120,7 +127,7 @@ Write-Host "URL: $authUrl"
 Write-Host ""
 
 try {
-    $response = Invoke-WebRequest -Uri $authUrl -Method Post -Headers $headers -Body $body -UseBasicParsing
+    $response = Invoke-WebRequest -Uri $authUrl -Method Post -Headers $headers -Body $bodyBytes -UseBasicParsing
     Write-Host "SUCCESS!" -ForegroundColor Green
     Write-Host "Status: $($response.StatusCode)" -ForegroundColor Green
     Write-Host "Response:" -ForegroundColor Green
