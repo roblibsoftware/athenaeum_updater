@@ -187,9 +187,17 @@ try {
                 }
 
                 $databaseId = $database.id
+                $currentStatus = $database.status
                 Write-DebugLog "Found Database ID: $databaseId"
-                Write-DebugLog "Status: $($database.status)"
+                Write-DebugLog "Status: $currentStatus"
                 Write-DebugLog "=============================="
+
+                # Skip close if database is already closed
+                if ($currentStatus -eq "CLOSED") {
+                    Write-DebugLog "Database is already CLOSED, skipping close operation"
+                    Write-Output "Database already closed: $DatabaseName"
+                    exit 0
+                }
             }
             catch {
                 Write-Error "Failed to list databases: $($_.Exception.Message)"
@@ -294,13 +302,16 @@ try {
             Write-DebugLog "Database ID: $databaseId"
             Write-DebugLog "Request URL: $openUrl"
             Write-DebugLog "Method: PATCH"
-            Write-DebugLog "============================="
 
             $body = @{
                 status = "NORMAL"
-            } | ConvertTo-Json
+            }
 
-            $response = Invoke-RestMethod -Uri $openUrl -Method Patch -Headers $headers -Body $body
+            $bodyJson = $body | ConvertTo-Json
+            Write-DebugLog "Request Body: $bodyJson"
+            Write-DebugLog "============================="
+
+            $response = Invoke-RestMethod -Uri $openUrl -Method Patch -Headers $headers -Body $bodyJson
 
             if ($response.messages[0].code -eq "0") {
                 Write-Output "Database opened successfully: $DatabaseName"
