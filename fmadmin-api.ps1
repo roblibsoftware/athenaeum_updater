@@ -229,15 +229,18 @@ try {
 
         'logout' {
             # Logout and invalidate token
+            # Log the request details
+            Write-Host "=== LOGOUT REQUEST ===" -ForegroundColor Cyan
+            Write-Host "Token received: '$Token'"
+            Write-Host "Token length: $($Token.Length)"
+
             if (-not $Token) {
+                Write-Host "ERROR: Token is null or empty!" -ForegroundColor Red
                 Write-Error "Token required for logout operation"
                 exit 1
             }
 
             $logoutUrl = "$baseUrl/user/auth/$Token"
-
-            # Log the request details
-            Write-Host "=== LOGOUT REQUEST ===" -ForegroundColor Cyan
             Write-Host "Request URL: $logoutUrl"
             Write-Host "Method: DELETE"
             Write-Host "======================" -ForegroundColor Cyan
