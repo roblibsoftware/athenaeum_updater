@@ -119,12 +119,18 @@ rem Step 2: Close the database (force disconnect)
 rem ============================================
 echo.
 echo %ESC%[102;30mStep 2: Closing database %dbfilename%...%ESC%[0m
+echo Attempting to close: %dbfilename% >> %log%
+echo FileMaker Host: %fmhost% >> %log%
+echo. >> %log%
 
 powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation close -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" -ForceDisconnect -GracePeriod 0 >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to close database %dbfilename%%ESC%[0m
     echo %ESC%[101;93mCannot proceed with update - database may be in use or not found%ESC%[0m
+    echo.
+    echo Check the log file for details: %log%
+    echo.
 
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
