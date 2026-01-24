@@ -45,25 +45,28 @@ Write-Host ""
 
 $authUrl = "https://$FileMakerHost/fmi/admin/api/v2/user/auth"
 
-$bodyObject = @{
-    username = $fmaccount
-    password = $fmpassword
-}
+# FileMaker Admin API uses HTTP Basic Authentication
+$credentials = "${fmaccount}:${fmpassword}"
+$credentialsBytes = [System.Text.Encoding]::ASCII.GetBytes($credentials)
+$credentialsBase64 = [System.Convert]::ToBase64String($credentialsBytes)
 
-$bodyJson = $bodyObject | ConvertTo-Json -Compress
+# Empty body (credentials in Authorization header)
+$bodyJson = "{}"
 $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyJson)
 
 Write-Host "REQUEST DETAILS:" -ForegroundColor Yellow
 Write-Host "URL: $authUrl"
 Write-Host "Method: POST"
+Write-Host "Authentication: HTTP Basic Auth"
+Write-Host "Authorization: Basic $($credentialsBase64.Substring(0,30))..."
 Write-Host "Body: $bodyJson"
 Write-Host "Body Length: $($bodyBytes.Length) bytes"
-Write-Host "Content-Type: application/json; charset=utf-8"
+Write-Host "Content-Type: application/json"
 Write-Host ""
 
 $headers = @{
-    'Content-Type' = 'application/json; charset=utf-8'
-    'Accept' = 'application/json'
+    'Content-Type' = 'application/json'
+    'Authorization' = "Basic $credentialsBase64"
 }
 
 try {

@@ -86,16 +86,21 @@ try {
             Write-DebugLog "Password length: $($Password.Length) chars"
             Write-DebugLog "====================="
 
-            $body = @{
-                username = $Username
-                password = $Password
-            } | ConvertTo-Json
-
-            Write-DebugLog "Request Body (JSON): $body"
+            # FileMaker Admin API uses HTTP Basic Authentication for login
+            # Create Base64 encoded credentials for Authorization header
+            $credentials = "${Username}:${Password}"
+            $credentialsBytes = [System.Text.Encoding]::ASCII.GetBytes($credentials)
+            $credentialsBase64 = [System.Convert]::ToBase64String($credentialsBytes)
 
             $headers = @{
                 'Content-Type' = 'application/json'
+                'Authorization' = "Basic $credentialsBase64"
             }
+
+            Write-DebugLog "Using HTTP Basic Authentication"
+
+            # Empty body (credentials are in Authorization header)
+            $body = @{} | ConvertTo-Json
 
             try {
                 $webResponse = Invoke-WebRequest -Uri $authUrl -Method Post -Headers $headers -Body $body -UseBasicParsing
