@@ -293,7 +293,7 @@ try {
             }
 
             # Now open using the database ID
-            # FileMaker Server 21+ uses PATCH /databases/{id} with status=NORMAL
+            # FileMaker Server 21+ uses PATCH /databases/{id} with status=OPENED
             $openUrl = "$baseUrl/databases/$databaseId"
 
             # Log the request details
@@ -304,7 +304,7 @@ try {
             Write-DebugLog "Method: PATCH"
 
             $body = @{
-                status = "NORMAL"
+                status = "OPENED"
             }
 
             $bodyJson = $body | ConvertTo-Json
