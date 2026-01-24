@@ -32,15 +32,32 @@ Write-Host ""
 # Get credentials
 Write-Host "Retrieving credentials..." -ForegroundColor Yellow
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-& "$scriptPath\get-fmcreds.ps1" | Invoke-Expression
+$credFilePath = Join-Path $scriptPath "fmcreds.encrypted"
 
-if (-not $fmaccount -or -not $fmpassword) {
-    Write-Host "ERROR: Failed to retrieve credentials" -ForegroundColor Red
+if (-not (Test-Path $credFilePath)) {
+    Write-Host "ERROR: Credential file not found: $credFilePath" -ForegroundColor Red
+    Write-Host "Please run store-credentials.cmd first" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Username: $fmaccount" -ForegroundColor Green
-Write-Host "Password length: $($fmpassword.Length) chars" -ForegroundColor Green
+try {
+    $lines = Get-Content $credFilePath
+    $fmaccount = $lines[0]
+    $encryptedPassword = $lines[1]
+
+    $securePassword = $encryptedPassword | ConvertTo-SecureString
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+    $fmpassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+    [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+
+    Write-Host "Username: $fmaccount" -ForegroundColor Green
+    Write-Host "Password length: $($fmpassword.Length) chars" -ForegroundColor Green
+}
+catch {
+    Write-Host "ERROR: Failed to decrypt credentials: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host ""
 
 # Test with athenaeum.nz
