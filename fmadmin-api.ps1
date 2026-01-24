@@ -112,21 +112,51 @@ try {
                 exit 1
             }
 
-            # URL encode the database name
-            $encodedDbName = [System.Web.HttpUtility]::UrlEncode($DatabaseName)
-            $closeUrl = "$baseUrl/databases/$encodedDbName/close"
-
-            # Log the request details
-            Write-Host "=== CLOSE DATABASE REQUEST ===" -ForegroundColor Cyan
-            Write-Host "Database Name (original): $DatabaseName"
-            Write-Host "Database Name (URL encoded): $encodedDbName"
-            Write-Host "Request URL: $closeUrl"
-            Write-Host "Method: PUT"
+            # First, get the database ID by listing databases
+            Write-Host "=== LOOKING UP DATABASE ID ===" -ForegroundColor Cyan
+            Write-Host "Database Name: $DatabaseName"
 
             $headers = @{
                 'Content-Type' = 'application/json'
                 'Authorization' = "Bearer $Token"
             }
+
+            $listUrl = "$baseUrl/databases"
+            Write-Host "List URL: $listUrl"
+
+            try {
+                $listResponse = Invoke-RestMethod -Uri $listUrl -Method Get -Headers $headers
+                $database = $listResponse.response.databases | Where-Object { $_.filename -eq $DatabaseName }
+
+                if (-not $database) {
+                    Write-Host "ERROR: Database not found in server list!" -ForegroundColor Red
+                    Write-Host "Available databases:" -ForegroundColor Yellow
+                    foreach ($db in $listResponse.response.databases) {
+                        Write-Host "  - $($db.filename) (ID: $($db.id), Status: $($db.status))" -ForegroundColor Yellow
+                    }
+                    Write-Error "Database '$DatabaseName' not found on FileMaker Server"
+                    exit 1
+                }
+
+                $databaseId = $database.id
+                Write-Host "Found Database ID: $databaseId"
+                Write-Host "Status: $($database.status)"
+                Write-Host "==============================" -ForegroundColor Cyan
+            }
+            catch {
+                Write-Error "Failed to list databases: $($_.Exception.Message)"
+                exit 1
+            }
+
+            # Now close using the database ID
+            $closeUrl = "$baseUrl/databases/$databaseId/close"
+
+            # Log the request details
+            Write-Host "=== CLOSE DATABASE REQUEST ===" -ForegroundColor Cyan
+            Write-Host "Database Name: $DatabaseName"
+            Write-Host "Database ID: $databaseId"
+            Write-Host "Request URL: $closeUrl"
+            Write-Host "Method: PUT"
 
             $body = @{
                 messageText = "Database closing for update"
@@ -167,21 +197,52 @@ try {
                 exit 1
             }
 
-            $encodedDbName = [System.Web.HttpUtility]::UrlEncode($DatabaseName)
-            $openUrl = "$baseUrl/databases/$encodedDbName/open"
-
-            # Log the request details
-            Write-Host "=== OPEN DATABASE REQUEST ===" -ForegroundColor Cyan
-            Write-Host "Database Name (original): $DatabaseName"
-            Write-Host "Database Name (URL encoded): $encodedDbName"
-            Write-Host "Request URL: $openUrl"
-            Write-Host "Method: PUT"
-            Write-Host "=============================" -ForegroundColor Cyan
+            # First, get the database ID by listing databases
+            Write-Host "=== LOOKING UP DATABASE ID ===" -ForegroundColor Cyan
+            Write-Host "Database Name: $DatabaseName"
 
             $headers = @{
                 'Content-Type' = 'application/json'
                 'Authorization' = "Bearer $Token"
             }
+
+            $listUrl = "$baseUrl/databases"
+            Write-Host "List URL: $listUrl"
+
+            try {
+                $listResponse = Invoke-RestMethod -Uri $listUrl -Method Get -Headers $headers
+                $database = $listResponse.response.databases | Where-Object { $_.filename -eq $DatabaseName }
+
+                if (-not $database) {
+                    Write-Host "ERROR: Database not found in server list!" -ForegroundColor Red
+                    Write-Host "Available databases:" -ForegroundColor Yellow
+                    foreach ($db in $listResponse.response.databases) {
+                        Write-Host "  - $($db.filename) (ID: $($db.id), Status: $($db.status))" -ForegroundColor Yellow
+                    }
+                    Write-Error "Database '$DatabaseName' not found on FileMaker Server"
+                    exit 1
+                }
+
+                $databaseId = $database.id
+                Write-Host "Found Database ID: $databaseId"
+                Write-Host "Status: $($database.status)"
+                Write-Host "==============================" -ForegroundColor Cyan
+            }
+            catch {
+                Write-Error "Failed to list databases: $($_.Exception.Message)"
+                exit 1
+            }
+
+            # Now open using the database ID
+            $openUrl = "$baseUrl/databases/$databaseId/open"
+
+            # Log the request details
+            Write-Host "=== OPEN DATABASE REQUEST ===" -ForegroundColor Cyan
+            Write-Host "Database Name: $DatabaseName"
+            Write-Host "Database ID: $databaseId"
+            Write-Host "Request URL: $openUrl"
+            Write-Host "Method: PUT"
+            Write-Host "=============================" -ForegroundColor Cyan
 
             $body = @{} | ConvertTo-Json
 
