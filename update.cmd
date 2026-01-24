@@ -92,8 +92,14 @@ set myaccount=migrate
 set mypassword=migrate
 
 rem FileMaker Server settings
-set fmhost=localhost
-set dbfilename=%1.fmp12
+set fmhost=athenaeum.nz
+
+rem Set database filename - add .fmp12 extension if not already present
+set dbfilename=%1
+echo %dbfilename% | findstr /i "\.fmp12$" >nul
+if %ERRORLEVEL% neq 0 (
+    set dbfilename=%1.fmp12
+)
 
 if "%~1"=="" goto END0
 if "%~2"=="" goto END0

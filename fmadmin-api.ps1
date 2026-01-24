@@ -35,6 +35,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Load System.Web assembly for URL encoding
+Add-Type -AssemblyName System.Web
+
 # FileMaker Server Admin API base URL
 $baseUrl = "https://$FileMakerHost/fmi/admin/api/v2"
 
