@@ -35,6 +35,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Helper function to write debug output to stderr (so it doesn't interfere with stdout captures)
+function Write-DebugLog {
+    param([string]$Message)
+    [Console]::Error.WriteLine($Message)
+}
+
 # Load System.Web assembly for URL encoding
 Add-Type -AssemblyName System.Web
 
@@ -73,11 +79,11 @@ try {
             $authUrl = "$baseUrl/user/auth"
 
             # Log the request details (don't log password!)
-            Write-Host "=== LOGIN REQUEST ===" -ForegroundColor Cyan
-            Write-Host "Request URL: $authUrl"
-            Write-Host "Method: POST"
-            Write-Host "Username: $Username"
-            Write-Host "=====================" -ForegroundColor Cyan
+            Write-DebugLog "=== LOGIN REQUEST ==="
+            Write-DebugLog "Request URL: $authUrl"
+            Write-DebugLog "Method: POST"
+            Write-DebugLog "Username: $Username"
+            Write-DebugLog "====================="
 
             $body = @{
                 username = $Username
@@ -113,8 +119,8 @@ try {
             }
 
             # First, get the database ID by listing databases
-            Write-Host "=== LOOKING UP DATABASE ID ===" -ForegroundColor Cyan
-            Write-Host "Database Name: $DatabaseName"
+            Write-DebugLog "=== LOOKING UP DATABASE ID ==="
+            Write-DebugLog "Database Name: $DatabaseName"
 
             $headers = @{
                 'Content-Type' = 'application/json'
@@ -122,26 +128,26 @@ try {
             }
 
             $listUrl = "$baseUrl/databases"
-            Write-Host "List URL: $listUrl"
+            Write-DebugLog "List URL: $listUrl"
 
             try {
                 $listResponse = Invoke-RestMethod -Uri $listUrl -Method Get -Headers $headers
                 $database = $listResponse.response.databases | Where-Object { $_.filename -eq $DatabaseName }
 
                 if (-not $database) {
-                    Write-Host "ERROR: Database not found in server list!" -ForegroundColor Red
-                    Write-Host "Available databases:" -ForegroundColor Yellow
+                    Write-DebugLog "ERROR: Database not found in server list!"
+                    Write-DebugLog "Available databases:"
                     foreach ($db in $listResponse.response.databases) {
-                        Write-Host "  - $($db.filename) (ID: $($db.id), Status: $($db.status))" -ForegroundColor Yellow
+                        Write-DebugLog "  - $($db.filename) (ID: $($db.id), Status: $($db.status))"
                     }
                     Write-Error "Database '$DatabaseName' not found on FileMaker Server"
                     exit 1
                 }
 
                 $databaseId = $database.id
-                Write-Host "Found Database ID: $databaseId"
-                Write-Host "Status: $($database.status)"
-                Write-Host "==============================" -ForegroundColor Cyan
+                Write-DebugLog "Found Database ID: $databaseId"
+                Write-DebugLog "Status: $($database.status)"
+                Write-DebugLog "=============================="
             }
             catch {
                 Write-Error "Failed to list databases: $($_.Exception.Message)"
@@ -152,11 +158,11 @@ try {
             $closeUrl = "$baseUrl/databases/$databaseId/close"
 
             # Log the request details
-            Write-Host "=== CLOSE DATABASE REQUEST ===" -ForegroundColor Cyan
-            Write-Host "Database Name: $DatabaseName"
-            Write-Host "Database ID: $databaseId"
-            Write-Host "Request URL: $closeUrl"
-            Write-Host "Method: PUT"
+            Write-DebugLog "=== CLOSE DATABASE REQUEST ==="
+            Write-DebugLog "Database Name: $DatabaseName"
+            Write-DebugLog "Database ID: $databaseId"
+            Write-DebugLog "Request URL: $closeUrl"
+            Write-DebugLog "Method: PUT"
 
             $body = @{
                 messageText = "Database closing for update"
@@ -171,8 +177,8 @@ try {
             }
 
             $bodyJson = $body | ConvertTo-Json
-            Write-Host "Request Body: $bodyJson"
-            Write-Host "==============================" -ForegroundColor Cyan
+            Write-DebugLog "Request Body: $bodyJson"
+            Write-DebugLog "=============================="
 
             $response = Invoke-RestMethod -Uri $closeUrl -Method Put -Headers $headers -Body $bodyJson
 
@@ -198,8 +204,8 @@ try {
             }
 
             # First, get the database ID by listing databases
-            Write-Host "=== LOOKING UP DATABASE ID ===" -ForegroundColor Cyan
-            Write-Host "Database Name: $DatabaseName"
+            Write-DebugLog "=== LOOKING UP DATABASE ID ==="
+            Write-DebugLog "Database Name: $DatabaseName"
 
             $headers = @{
                 'Content-Type' = 'application/json'
@@ -207,26 +213,26 @@ try {
             }
 
             $listUrl = "$baseUrl/databases"
-            Write-Host "List URL: $listUrl"
+            Write-DebugLog "List URL: $listUrl"
 
             try {
                 $listResponse = Invoke-RestMethod -Uri $listUrl -Method Get -Headers $headers
                 $database = $listResponse.response.databases | Where-Object { $_.filename -eq $DatabaseName }
 
                 if (-not $database) {
-                    Write-Host "ERROR: Database not found in server list!" -ForegroundColor Red
-                    Write-Host "Available databases:" -ForegroundColor Yellow
+                    Write-DebugLog "ERROR: Database not found in server list!"
+                    Write-DebugLog "Available databases:"
                     foreach ($db in $listResponse.response.databases) {
-                        Write-Host "  - $($db.filename) (ID: $($db.id), Status: $($db.status))" -ForegroundColor Yellow
+                        Write-DebugLog "  - $($db.filename) (ID: $($db.id), Status: $($db.status))"
                     }
                     Write-Error "Database '$DatabaseName' not found on FileMaker Server"
                     exit 1
                 }
 
                 $databaseId = $database.id
-                Write-Host "Found Database ID: $databaseId"
-                Write-Host "Status: $($database.status)"
-                Write-Host "==============================" -ForegroundColor Cyan
+                Write-DebugLog "Found Database ID: $databaseId"
+                Write-DebugLog "Status: $($database.status)"
+                Write-DebugLog "=============================="
             }
             catch {
                 Write-Error "Failed to list databases: $($_.Exception.Message)"
@@ -237,12 +243,12 @@ try {
             $openUrl = "$baseUrl/databases/$databaseId/open"
 
             # Log the request details
-            Write-Host "=== OPEN DATABASE REQUEST ===" -ForegroundColor Cyan
-            Write-Host "Database Name: $DatabaseName"
-            Write-Host "Database ID: $databaseId"
-            Write-Host "Request URL: $openUrl"
-            Write-Host "Method: PUT"
-            Write-Host "=============================" -ForegroundColor Cyan
+            Write-DebugLog "=== OPEN DATABASE REQUEST ==="
+            Write-DebugLog "Database Name: $DatabaseName"
+            Write-DebugLog "Database ID: $databaseId"
+            Write-DebugLog "Request URL: $openUrl"
+            Write-DebugLog "Method: PUT"
+            Write-DebugLog "============================="
 
             $body = @{} | ConvertTo-Json
 
@@ -291,20 +297,20 @@ try {
         'logout' {
             # Logout and invalidate token
             # Log the request details
-            Write-Host "=== LOGOUT REQUEST ===" -ForegroundColor Cyan
-            Write-Host "Token received: '$Token'"
-            Write-Host "Token length: $($Token.Length)"
+            Write-DebugLog "=== LOGOUT REQUEST ==="
+            Write-DebugLog "Token received: '$Token'"
+            Write-DebugLog "Token length: $($Token.Length)"
 
             if (-not $Token) {
-                Write-Host "ERROR: Token is null or empty!" -ForegroundColor Red
+                Write-DebugLog "ERROR: Token is null or empty!"
                 Write-Error "Token required for logout operation"
                 exit 1
             }
 
             $logoutUrl = "$baseUrl/user/auth/$Token"
-            Write-Host "Request URL: $logoutUrl"
-            Write-Host "Method: DELETE"
-            Write-Host "======================" -ForegroundColor Cyan
+            Write-DebugLog "Request URL: $logoutUrl"
+            Write-DebugLog "Method: DELETE"
+            Write-DebugLog "======================"
 
             $headers = @{
                 'Content-Type' = 'application/json'
