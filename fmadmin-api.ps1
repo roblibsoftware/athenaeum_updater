@@ -83,12 +83,15 @@ try {
             Write-DebugLog "Request URL: $authUrl"
             Write-DebugLog "Method: POST"
             Write-DebugLog "Username: $Username"
+            Write-DebugLog "Password length: $($Password.Length) chars"
             Write-DebugLog "====================="
 
             $body = @{
                 username = $Username
                 password = $Password
             } | ConvertTo-Json
+
+            Write-DebugLog "Request Body (JSON): $body"
 
             $headers = @{
                 'Content-Type' = 'application/json'
@@ -333,11 +336,24 @@ try {
     }
 }
 catch {
-    Write-Error "API operation '$Operation' failed: $($_.Exception.Message)"
+    Write-DebugLog "=== ERROR DETAILS ==="
+    Write-DebugLog "Operation: $Operation"
+    Write-DebugLog "Error Message: $($_.Exception.Message)"
+
     if ($_.Exception.Response) {
-        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-        $responseBody = $reader.ReadToEnd()
-        Write-Error "Response: $responseBody"
+        try {
+            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+            $responseBody = $reader.ReadToEnd()
+            Write-DebugLog "HTTP Status: $($_.Exception.Response.StatusCode)"
+            Write-DebugLog "Response Body: $responseBody"
+            $reader.Close()
+        }
+        catch {
+            Write-DebugLog "Could not read response body"
+        }
     }
+    Write-DebugLog "===================="
+
+    Write-Error "API operation '$Operation' failed: $($_.Exception.Message)"
     exit 1
 }

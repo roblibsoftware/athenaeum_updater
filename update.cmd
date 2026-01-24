@@ -133,10 +133,17 @@ if not exist "%~dp0fmtoken.tmp" (
     exit /b 1
 )
 
+rem Debug: Show token file exists and contents
+echo DEBUG: Token file exists >> %log%
+echo DEBUG: Token file contents: >> %log%
+type "%~dp0fmtoken.tmp" >> %log%
+echo. >> %log%
+
 set /p fmtoken=<"%~dp0fmtoken.tmp"
 
 echo Token obtained successfully >> %log%
-echo Token length: %fmtoken:~0,10%... >> %log%
+echo DEBUG: Token variable value: "%fmtoken%" >> %log%
+echo DEBUG: Token length: %fmtoken:~0,10%... >> %log%
 
 rem ============================================
 rem Step 2: Close the database (force disconnect)
