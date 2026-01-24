@@ -334,7 +334,7 @@ if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
 
 echo.
 echo %ESC%[102;30m===================================================%ESC%[0m
-echo %ESC%[102;30mUpdate completed successfully for %dbfilename%%ESC%[0m
+echo %ESC%[102;30mUpdate completed successfully for %dbfilename% %ESC%[0m
 echo %ESC%[102;30m===================================================%ESC%[0m
 echo.
 
