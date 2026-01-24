@@ -72,6 +72,13 @@ try {
             # Authenticate and get token
             $authUrl = "$baseUrl/user/auth"
 
+            # Log the request details (don't log password!)
+            Write-Host "=== LOGIN REQUEST ===" -ForegroundColor Cyan
+            Write-Host "Request URL: $authUrl"
+            Write-Host "Method: POST"
+            Write-Host "Username: $Username"
+            Write-Host "=====================" -ForegroundColor Cyan
+
             $body = @{
                 username = $Username
                 password = $Password
@@ -109,6 +116,13 @@ try {
             $encodedDbName = [System.Web.HttpUtility]::UrlEncode($DatabaseName)
             $closeUrl = "$baseUrl/databases/$encodedDbName/close"
 
+            # Log the request details
+            Write-Host "=== CLOSE DATABASE REQUEST ===" -ForegroundColor Cyan
+            Write-Host "Database Name (original): $DatabaseName"
+            Write-Host "Database Name (URL encoded): $encodedDbName"
+            Write-Host "Request URL: $closeUrl"
+            Write-Host "Method: PUT"
+
             $headers = @{
                 'Content-Type' = 'application/json'
                 'Authorization' = "Bearer $Token"
@@ -127,6 +141,8 @@ try {
             }
 
             $bodyJson = $body | ConvertTo-Json
+            Write-Host "Request Body: $bodyJson"
+            Write-Host "==============================" -ForegroundColor Cyan
 
             $response = Invoke-RestMethod -Uri $closeUrl -Method Put -Headers $headers -Body $bodyJson
 
@@ -153,6 +169,14 @@ try {
 
             $encodedDbName = [System.Web.HttpUtility]::UrlEncode($DatabaseName)
             $openUrl = "$baseUrl/databases/$encodedDbName/open"
+
+            # Log the request details
+            Write-Host "=== OPEN DATABASE REQUEST ===" -ForegroundColor Cyan
+            Write-Host "Database Name (original): $DatabaseName"
+            Write-Host "Database Name (URL encoded): $encodedDbName"
+            Write-Host "Request URL: $openUrl"
+            Write-Host "Method: PUT"
+            Write-Host "=============================" -ForegroundColor Cyan
 
             $headers = @{
                 'Content-Type' = 'application/json'
@@ -211,6 +235,12 @@ try {
             }
 
             $logoutUrl = "$baseUrl/user/auth/$Token"
+
+            # Log the request details
+            Write-Host "=== LOGOUT REQUEST ===" -ForegroundColor Cyan
+            Write-Host "Request URL: $logoutUrl"
+            Write-Host "Method: DELETE"
+            Write-Host "======================" -ForegroundColor Cyan
 
             $headers = @{
                 'Content-Type' = 'application/json'
