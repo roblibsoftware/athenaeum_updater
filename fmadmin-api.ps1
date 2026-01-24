@@ -197,17 +197,18 @@ try {
             }
 
             # Now close using the database ID
-            $closeUrl = "$baseUrl/databases/$databaseId/close"
+            # FileMaker Server 21+ uses PATCH /databases/{id} with status=CLOSED
+            $closeUrl = "$baseUrl/databases/$databaseId"
 
             # Log the request details
             Write-DebugLog "=== CLOSE DATABASE REQUEST ==="
             Write-DebugLog "Database Name: $DatabaseName"
             Write-DebugLog "Database ID: $databaseId"
             Write-DebugLog "Request URL: $closeUrl"
-            Write-DebugLog "Method: PUT"
+            Write-DebugLog "Method: PATCH"
 
             $body = @{
-                messageText = "Database closing for update"
+                status = "CLOSED"
             }
 
             if ($ForceDisconnect) {
@@ -222,7 +223,7 @@ try {
             Write-DebugLog "Request Body: $bodyJson"
             Write-DebugLog "=============================="
 
-            $response = Invoke-RestMethod -Uri $closeUrl -Method Put -Headers $headers -Body $bodyJson
+            $response = Invoke-RestMethod -Uri $closeUrl -Method Patch -Headers $headers -Body $bodyJson
 
             if ($response.messages[0].code -eq "0") {
                 Write-Output "Database closed successfully: $DatabaseName"
@@ -284,19 +285,22 @@ try {
             }
 
             # Now open using the database ID
-            $openUrl = "$baseUrl/databases/$databaseId/open"
+            # FileMaker Server 21+ uses PATCH /databases/{id} with status=NORMAL
+            $openUrl = "$baseUrl/databases/$databaseId"
 
             # Log the request details
             Write-DebugLog "=== OPEN DATABASE REQUEST ==="
             Write-DebugLog "Database Name: $DatabaseName"
             Write-DebugLog "Database ID: $databaseId"
             Write-DebugLog "Request URL: $openUrl"
-            Write-DebugLog "Method: PUT"
+            Write-DebugLog "Method: PATCH"
             Write-DebugLog "============================="
 
-            $body = @{} | ConvertTo-Json
+            $body = @{
+                status = "NORMAL"
+            } | ConvertTo-Json
 
-            $response = Invoke-RestMethod -Uri $openUrl -Method Put -Headers $headers -Body $body
+            $response = Invoke-RestMethod -Uri $openUrl -Method Patch -Headers $headers -Body $body
 
             if ($response.messages[0].code -eq "0") {
                 Write-Output "Database opened successfully: $DatabaseName"
