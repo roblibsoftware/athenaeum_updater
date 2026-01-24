@@ -162,10 +162,12 @@ try {
             Write-DebugLog "=== LOOKING UP DATABASE ID ==="
             Write-DebugLog "Database Name: $DatabaseName"
 
+            # Use Bearer token authentication for API operations after login
             $headers = @{
                 'Content-Type' = 'application/json'
                 'Authorization' = "Bearer $Token"
             }
+            Write-DebugLog "Using Bearer token authentication"
 
             $listUrl = "$baseUrl/databases"
             Write-DebugLog "List URL: $listUrl"
@@ -247,10 +249,12 @@ try {
             Write-DebugLog "=== LOOKING UP DATABASE ID ==="
             Write-DebugLog "Database Name: $DatabaseName"
 
+            # Use Bearer token authentication for API operations after login
             $headers = @{
                 'Content-Type' = 'application/json'
                 'Authorization' = "Bearer $Token"
             }
+            Write-DebugLog "Using Bearer token authentication"
 
             $listUrl = "$baseUrl/databases"
             Write-DebugLog "List URL: $listUrl"
