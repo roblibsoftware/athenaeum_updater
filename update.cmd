@@ -114,7 +114,11 @@ rem ============================================
 echo.
 echo %ESC%[102;30mStep 1: Authenticating with FileMaker Server...%ESC%[0m
 
-for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%"') do set fmtoken=%%i
+rem Delete old token file if it exists
+if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
+
+rem Run login and redirect debug output to log
+powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to authenticate with FileMaker Server%ESC%[0m
@@ -122,7 +126,17 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
+rem Read token from temporary file
+if not exist "%~dp0fmtoken.tmp" (
+    echo %ESC%[101;93mERROR: Token file not created%ESC%[0m
+    echo %ESC%[101;93mCannot proceed with update%ESC%[0m
+    exit /b 1
+)
+
+set /p fmtoken=<"%~dp0fmtoken.tmp"
+
 echo Token obtained successfully >> %log%
+echo Token length: %fmtoken:~0,10%... >> %log%
 
 rem ============================================
 rem Step 2: Close the database (force disconnect)
@@ -144,6 +158,9 @@ if %ERRORLEVEL% neq 0 (
 
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    rem Clean up token file
+    if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
 
     goto END0
 )
@@ -169,6 +186,9 @@ if %ERRORLEVEL% neq 0 (
 
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    rem Clean up token file
+    if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
 
     exit /b 1
 )
@@ -257,6 +277,9 @@ if %ERRORLEVEL% neq 0 (
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
+    rem Clean up token file
+    if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
+
     exit /b 1
 )
 
@@ -274,6 +297,9 @@ if %ERRORLEVEL% neq 0 (
 
     rem Logout from API
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
+
+    rem Clean up token file
+    if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
 
     exit /b 1
 )
@@ -296,6 +322,9 @@ if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mWARNING: Logout failed (token may expire automatically)%ESC%[0m
 )
 
+rem Clean up token file
+if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
+
 echo.
 echo %ESC%[102;30m===================================================%ESC%[0m
 echo %ESC%[102;30mUpdate completed successfully for %dbfilename%%ESC%[0m
@@ -305,6 +334,8 @@ echo.
 GOTO END0
 
 :END0
+rem Clean up token file if it exists
+if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
 
 echo.
 echo.

@@ -97,7 +97,11 @@ try {
             $response = Invoke-RestMethod -Uri $authUrl -Method Post -Headers $headers -Body $body
 
             if ($response.response.token) {
-                # Output just the token for batch script to capture
+                # Write token to temporary file AND output to stdout
+                $tokenFile = Join-Path $PSScriptRoot "fmtoken.tmp"
+                $response.response.token | Set-Content -Path $tokenFile -NoNewline -Force
+
+                # Also output to stdout for backwards compatibility
                 Write-Output $response.response.token
                 exit 0
             } else {
