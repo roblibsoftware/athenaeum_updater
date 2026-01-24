@@ -42,8 +42,9 @@ if (-not (Test-Path $credFilePath)) {
 
 try {
     $lines = Get-Content $credFilePath
-    $fmaccount = $lines[0]
-    $encryptedPassword = $lines[1]
+    # Ensure we get strings, not FileInfo objects
+    $fmaccount = [string]$lines[0]
+    $encryptedPassword = [string]$lines[1]
 
     $securePassword = $encryptedPassword | ConvertTo-SecureString
     $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)

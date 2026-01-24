@@ -34,8 +34,9 @@ try {
         exit 1
     }
 
-    $username = $lines[0]
-    $encryptedPassword = $lines[1]
+    # Ensure we get strings, not FileInfo objects
+    $username = [string]$lines[0]
+    $encryptedPassword = [string]$lines[1]
 
     # Decrypt the password using DPAPI (Windows Data Protection API)
     $securePassword = $encryptedPassword | ConvertTo-SecureString
