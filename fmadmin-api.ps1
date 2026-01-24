@@ -97,7 +97,35 @@ try {
                 'Content-Type' = 'application/json'
             }
 
-            $response = Invoke-RestMethod -Uri $authUrl -Method Post -Headers $headers -Body $body
+            try {
+                $webResponse = Invoke-WebRequest -Uri $authUrl -Method Post -Headers $headers -Body $body -UseBasicParsing
+                Write-DebugLog "HTTP Status: $($webResponse.StatusCode)"
+                Write-DebugLog "Response Content: $($webResponse.Content)"
+
+                $response = $webResponse.Content | ConvertFrom-Json
+            }
+            catch {
+                Write-DebugLog "=== LOGIN FAILED ==="
+                Write-DebugLog "Status Code: $($_.Exception.Response.StatusCode.value__)"
+                Write-DebugLog "Status Description: $($_.Exception.Response.StatusDescription)"
+
+                # Try to read response body if available
+                if ($_.Exception.Response) {
+                    try {
+                        $result = $_.Exception.Response.GetResponseStream()
+                        $reader = New-Object System.IO.StreamReader($result)
+                        $responseText = $reader.ReadToEnd()
+                        Write-DebugLog "Response Body: $responseText"
+                        $reader.Close()
+                    }
+                    catch {
+                        Write-DebugLog "Could not read response stream"
+                    }
+                }
+
+                Write-DebugLog "=================="
+                throw
+            }
 
             if ($response.response.token) {
                 # Write token to temporary file AND output to stdout
