@@ -95,10 +95,14 @@ rem FileMaker Server settings
 set fmhost=athenaeum.nz
 
 rem Set database filename - add .fmp12 extension if not already present
-set dbfilename=%1
-echo %dbfilename% | findstr /i "\.fmp12$" >nul
+echo DEBUG: Parameter 1 = %1 >> %log%
+echo %1 | findstr /i "\.fmp12$" >nul
 if %ERRORLEVEL% neq 0 (
     set dbfilename=%1.fmp12
+    echo DEBUG: Added extension, dbfilename = %1.fmp12 >> %log%
+) else (
+    set dbfilename=%1
+    echo DEBUG: Extension already present, dbfilename = %1 >> %log%
 )
 
 if "%~1"=="" goto END0
