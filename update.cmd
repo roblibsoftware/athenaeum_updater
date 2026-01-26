@@ -82,9 +82,11 @@ del /q %log%
 set live=A:\live_databases\
 
 rem Retrieve credentials from encrypted storage using PowerShell
-for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-fmcreds.ps1"') do %%i
+rem Redirect stderr to prevent error messages from being executed as commands
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-fmcreds.ps1" 2^>nul') do %%i
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to retrieve credentials%ESC%[0m
+    echo %ESC%[101;93mPlease run store-credentials.cmd to set up credentials first%ESC%[0m
     exit /b 1
 )
 

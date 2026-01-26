@@ -11,9 +11,11 @@ echo ================================
 echo.
 
 rem Retrieve credentials from encrypted storage using PowerShell
-for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-fmcreds.ps1"') do %%i
+rem Redirect stderr to prevent error messages from being executed as commands
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-fmcreds.ps1" 2^>nul') do %%i
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to retrieve credentials%ESC%[0m
+    echo %ESC%[101;93mPlease run store-credentials.cmd to set up credentials first%ESC%[0m
     pause
     exit /b 1
 )
@@ -25,7 +27,8 @@ echo Connecting to: %fmhost%
 echo.
 
 rem Get authentication token
-for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%"') do set fmtoken=%%i
+rem Redirect stderr to prevent error messages from being executed as commands
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%" 2^>nul') do set fmtoken=%%i
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to authenticate%ESC%[0m
