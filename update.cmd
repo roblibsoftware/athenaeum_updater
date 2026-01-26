@@ -163,7 +163,7 @@ if %ERRORLEVEL% neq 0 (
     echo Check the log file for details: %log%
     echo.
 
-    rem Logout from API
+    rem Logout from API (errors ignored)
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
     rem Clean up token file
@@ -191,7 +191,7 @@ if %ERRORLEVEL% neq 0 (
     echo Attempting to reopen database...
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" >> %log% 2>&1
 
-    rem Logout from API
+    rem Logout from API (errors ignored)
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
     rem Clean up token file
@@ -233,13 +233,10 @@ if %ERRORLEVEL% neq 0 (
     echo Reopening original database...
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open -FileMakerHost "%fmhost%" -Token "%fmtoken%" -DatabaseName "%dbfilename%" >> %log% 2>&1
 
-    if %ERRORLEVEL% neq 0 (
-        echo %ESC%[101;93mWARNING: Failed to reopen database - manual intervention required%ESC%[0m
-    ) else (
-        echo Database reopened successfully
-    )
+    if not %ERRORLEVEL% equ 0 echo WARNING: Failed to reopen database - manual intervention required
+    if %ERRORLEVEL% equ 0 echo Database reopened successfully
 
-    rem Logout from API
+    rem Logout from API (errors ignored)
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
     echo.
@@ -281,7 +278,7 @@ if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to copy updated database to live folder%ESC%[0m
     echo %ESC%[101;93mCRITICAL: Database is closed but new version not deployed%ESC%[0m
 
-    rem Logout from API
+    rem Logout from API (errors ignored)
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
     rem Clean up token file
@@ -302,7 +299,7 @@ if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to open updated database%ESC%[0m
     echo %ESC%[101;93mManual intervention may be required%ESC%[0m
 
-    rem Logout from API
+    rem Logout from API (errors ignored)
     powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
     rem Clean up token file
@@ -315,7 +312,7 @@ echo Database opened successfully
 echo Database opened successfully >> %log%
 
 rem Wait for database to fully open
-timeout /t 6 /nobreak
+rem timeout /t 6 /nobreak
 
 rem ============================================
 rem Step 9: Logout from FileMaker Server Admin API
@@ -325,9 +322,8 @@ echo %ESC%[102;30mStep 8: Logging out from FileMaker Server...%ESC%[0m
 
 powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >> %log% 2>&1
 
-if %ERRORLEVEL% neq 0 (
-    echo %ESC%[101;93mWARNING: Logout failed (token may expire automatically)%ESC%[0m
-)
+rem Check logout status and display warning if needed (without variable expansion in IF block)
+if not %ERRORLEVEL% equ 0 echo WARNING: Logout failed (token may expire automatically)
 
 rem Clean up token file
 if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
