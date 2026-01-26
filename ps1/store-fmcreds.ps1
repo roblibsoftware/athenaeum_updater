@@ -36,8 +36,9 @@ Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 
 try {
-    # Path to encrypted credential file (stored in same directory as script)
-    $credFilePath = Join-Path $PSScriptRoot "fmcreds.encrypted"
+    # Path to encrypted credential file (stored in parent directory)
+    $parentDir = Split-Path $PSScriptRoot -Parent
+    $credFilePath = Join-Path $parentDir "fmcreds.encrypted"
 
     # Check if credential file already exists
     if (Test-Path $credFilePath) {

@@ -9,7 +9,7 @@ echo Testing FileMaker Credential Retrieval
 echo ========================================
 echo.
 
-powershell -ExecutionPolicy Bypass -File "%~dp0get-fmcreds.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0..\ps1\get-fmcreds.ps1"
 
 if %ERRORLEVEL% neq 0 (
     echo.

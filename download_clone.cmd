@@ -10,5 +10,5 @@ for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ES
 cls
 
 rem Call the PowerShell script to download and extract the clone file
-powershell -ExecutionPolicy Bypass -File "%~dp0download_clone.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0ps1\download_clone.ps1"
 exit /b %ERRORLEVEL%

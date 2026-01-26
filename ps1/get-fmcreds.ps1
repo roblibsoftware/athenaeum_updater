@@ -16,12 +16,13 @@ param()
 $ErrorActionPreference = "Stop"
 
 try {
-    # Path to encrypted credential file (stored in same directory as script)
-    $credFilePath = Join-Path $PSScriptRoot "fmcreds.encrypted"
+    # Path to encrypted credential file (stored in parent directory)
+    $parentDir = Split-Path $PSScriptRoot -Parent
+    $credFilePath = Join-Path $parentDir "fmcreds.encrypted"
 
     # Check if credential file exists
     if (-not (Test-Path $credFilePath)) {
-        Write-Error "Credential file not found at: $credFilePath`nPlease run store-fmcreds.ps1 first to store credentials."
+        Write-Error "Credential file not found at: $credFilePath`nPlease run ps1\store-fmcreds.ps1 first to store credentials."
         exit 1
     }
 
@@ -30,7 +31,7 @@ try {
     $lines = Get-Content $credFilePath
 
     if ($lines.Count -lt 2) {
-        Write-Error "Invalid credential file format. Please run store-fmcreds.ps1 again."
+        Write-Error "Invalid credential file format. Please run ps1\store-fmcreds.ps1 again."
         exit 1
     }
 

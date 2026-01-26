@@ -11,7 +11,7 @@ echo ================================
 echo.
 
 rem Retrieve credentials from encrypted storage using PowerShell
-for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0get-fmcreds.ps1"') do %%i
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-fmcreds.ps1"') do %%i
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to retrieve credentials%ESC%[0m
     pause
@@ -25,7 +25,7 @@ echo Connecting to: %fmhost%
 echo.
 
 rem Get authentication token
-for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%"') do set fmtoken=%%i
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\fmadmin-api.ps1" -Operation login -FileMakerHost "%fmhost%" -Username "%fmaccount%" -Password "%fmpassword%"') do set fmtoken=%%i
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to authenticate%ESC%[0m
@@ -45,7 +45,7 @@ echo.
 echo.
 
 rem Logout
-powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%~dp0ps1\fmadmin-api.ps1" -Operation logout -FileMakerHost "%fmhost%" -Token "%fmtoken%" >nul 2>&1
 
 echo.
 pause

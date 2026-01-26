@@ -6,8 +6,8 @@ param(
 # Enable ANSI color support
 $ESC = [char]27
 
-# Set paths
-$ScriptDirectory = $PSScriptRoot
+# Set paths (use parent directory for working files)
+$ScriptDirectory = Split-Path $PSScriptRoot -Parent
 $DownloadZip = Join-Path $ScriptDirectory "$CloneFile.zip"
 $CloneDir = Join-Path $ScriptDirectory "clone"
 $DownloadFile = Join-Path $CloneDir $CloneFile

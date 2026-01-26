@@ -133,8 +133,9 @@ try {
             }
 
             if ($response.response.token) {
-                # Write token to temporary file AND output to stdout
-                $tokenFile = Join-Path $PSScriptRoot "fmtoken.tmp"
+                # Write token to temporary file AND output to stdout (stored in parent directory)
+                $parentDir = Split-Path $PSScriptRoot -Parent
+                $tokenFile = Join-Path $parentDir "fmtoken.tmp"
                 $response.response.token | Set-Content -Path $tokenFile -NoNewline -Force
 
                 # Also output to stdout for backwards compatibility

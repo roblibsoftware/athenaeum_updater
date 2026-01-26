@@ -58,7 +58,7 @@ This document describes the integration of FileMaker Server Admin API v2 into th
 
 **PowerShell Usage:**
 ```powershell
-.\fmadmin-api.ps1 -Operation login -FileMakerHost "localhost" -Username "admin" -Password "password"
+.\ps1\fmadmin-api.ps1 -Operation login -FileMakerHost "localhost" -Username "admin" -Password "password"
 ```
 
 **Returns:** Authentication token (string)
@@ -82,7 +82,7 @@ for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin
 
 **PowerShell Usage:**
 ```powershell
-.\fmadmin-api.ps1 -Operation close -FileMakerHost "localhost" -Token $token -DatabaseName "mydb.fmp12" -ForceDisconnect -GracePeriod 0
+.\ps1\fmadmin-api.ps1 -Operation close -FileMakerHost "localhost" -Token $token -DatabaseName "mydb.fmp12" -ForceDisconnect -GracePeriod 0
 ```
 
 **Parameters:**
@@ -117,7 +117,7 @@ powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation close
 
 **PowerShell Usage:**
 ```powershell
-.\fmadmin-api.ps1 -Operation open -FileMakerHost "localhost" -Token $token -DatabaseName "mydb.fmp12"
+.\ps1\fmadmin-api.ps1 -Operation open -FileMakerHost "localhost" -Token $token -DatabaseName "mydb.fmp12"
 ```
 
 **Batch Usage:**
@@ -139,7 +139,7 @@ powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open 
 
 **PowerShell Usage:**
 ```powershell
-.\fmadmin-api.ps1 -Operation get-status -FileMakerHost "localhost" -Token $token -DatabaseName "mydb.fmp12"
+.\ps1\fmadmin-api.ps1 -Operation get-status -FileMakerHost "localhost" -Token $token -DatabaseName "mydb.fmp12"
 ```
 
 **Returns:** Status string ("NORMAL", "CLOSED", etc.)
@@ -158,7 +158,7 @@ powershell -ExecutionPolicy Bypass -File "%~dp0fmadmin-api.ps1" -Operation open 
 
 **PowerShell Usage:**
 ```powershell
-.\fmadmin-api.ps1 -Operation logout -FileMakerHost "localhost" -Token $token
+.\ps1\fmadmin-api.ps1 -Operation logout -FileMakerHost "localhost" -Token $token
 ```
 
 **Batch Usage:**
@@ -338,7 +338,7 @@ powershell ... -Operation logout ... -Token "%fmtoken%"
 
 **Solutions:**
 1. Verify FileMaker Server is running: `fmsadmin status`
-2. Check credentials in encrypted storage: `.\get-fmcreds.ps1`
+2. Check credentials in encrypted storage: `.\ps1\get-fmcreds.ps1`
 3. Verify Admin Console API is enabled (FileMaker Server Admin Console → Configuration → Admin API)
 4. Check firewall allows HTTPS (port 443) to FileMaker Server
 

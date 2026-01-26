@@ -49,12 +49,12 @@ store-credentials.cmd
 **Method 2: Using PowerShell directly**
 ```powershell
 cd B:\up
-powershell -ExecutionPolicy Bypass -File .\store-fmcreds.ps1
+powershell -ExecutionPolicy Bypass -File .\ps1\store-fmcreds.ps1
 ```
 
 Or from within PowerShell (if file is unblocked):
 ```powershell
-.\store-fmcreds.ps1
+.\ps1\store-fmcreds.ps1
 ```
 
 You will be prompted to:
@@ -95,7 +95,7 @@ test-credentials.cmd
 
 **Method 2: Using PowerShell directly**
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\get-fmcreds.ps1
+powershell -ExecutionPolicy Bypass -File .\ps1\get-fmcreds.ps1
 ```
 
 **Expected output:**
@@ -184,7 +184,7 @@ store-credentials.cmd
 
 Or using PowerShell:
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\store-fmcreds.ps1
+powershell -ExecutionPolicy Bypass -File .\ps1\store-fmcreds.ps1
 ```
 
 ### Error: "Failed to retrieve credentials" or Decryption Error
@@ -217,10 +217,10 @@ clear-credentials.cmd
 
 **Option 2: Unblock the PowerShell files**
 ```powershell
-Unblock-File .\store-fmcreds.ps1
-Unblock-File .\get-fmcreds.ps1
-Unblock-File .\clear-fmcreds.ps1
-Unblock-File .\fmadmin-api.ps1
+Unblock-File .\ps1\store-fmcreds.ps1
+Unblock-File .\ps1\get-fmcreds.ps1
+Unblock-File .\ps1\clear-fmcreds.ps1
+Unblock-File .\ps1\fmadmin-api.ps1
 ```
 
 **Option 3: Change execution policy**
@@ -230,7 +230,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 **Option 4: Always use -ExecutionPolicy Bypass flag**
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\store-fmcreds.ps1
+powershell -ExecutionPolicy Bypass -File .\ps1\store-fmcreds.ps1
 ```
 
 **Note:** The batch scripts (update.cmd, all.cmd, etc.) already use the `-ExecutionPolicy Bypass` flag, so they will work without any changes.
@@ -246,7 +246,7 @@ powershell -ExecutionPolicy Bypass -File .\store-fmcreds.ps1
 
 **Example of problem:**
 ```powershell
-PS B:\api_updater> powershell -ExecutionPolicy Bypass -File .\clear-fmcreds.ps1
+PS B:\api_updater> powershell -ExecutionPolicy Bypass -File .\ps1\clear-fmcreds.ps1
 # Script displays prompt but won't accept input
 ```
 
@@ -260,16 +260,16 @@ clear-credentials.cmd
 **Option 2: Run from Command Prompt (not PowerShell)**
 - Close PowerShell
 - Open Command Prompt (CMD)
-- Run: `powershell -ExecutionPolicy Bypass -File .\clear-fmcreds.ps1`
+- Run: `powershell -ExecutionPolicy Bypass -File .\ps1\clear-fmcreds.ps1`
 
 **Option 3: Run directly if file is unblocked**
 ```powershell
-.\clear-fmcreds.ps1
+.\ps1\clear-fmcreds.ps1
 ```
 
 **Option 4: Use -Force to skip the prompt**
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\clear-fmcreds.ps1 -Force
+powershell -ExecutionPolicy Bypass -File .\ps1\clear-fmcreds.ps1 -Force
 ```
 
 ### Scheduled Tasks Not Working
@@ -352,7 +352,7 @@ Administrators: Full Control
 ### Recovering Credentials
 1. Log in as the same Windows user that encrypted the credentials
 2. Copy `fmcreds.encrypted` back to the script directory
-3. Test with `.\get-fmcreds.ps1`
+3. Test with `.\ps1\get-fmcreds.ps1`
 
 ### What If You Lose Access?
 If you lose access to the Windows user account that encrypted credentials:

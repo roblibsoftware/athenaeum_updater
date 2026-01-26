@@ -17,8 +17,9 @@ Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 
 try {
-    # Path to encrypted credential file
-    $credFilePath = Join-Path $PSScriptRoot "fmcreds.encrypted"
+    # Path to encrypted credential file (stored in parent directory)
+    $parentDir = Split-Path $PSScriptRoot -Parent
+    $credFilePath = Join-Path $parentDir "fmcreds.encrypted"
 
     # Check if credential file exists
     if (-not (Test-Path $credFilePath)) {
@@ -34,7 +35,7 @@ try {
     # Confirm deletion unless -Force is used
     if (-not $Force) {
         Write-Host "WARNING: This will delete the encrypted credentials." -ForegroundColor Yellow
-        Write-Host "You will need to run store-fmcreds.ps1 again to re-create them." -ForegroundColor Yellow
+        Write-Host "You will need to run ps1\store-fmcreds.ps1 again to re-create them." -ForegroundColor Yellow
         Write-Host ""
         $confirm = Read-Host "Are you sure you want to delete the credentials? (yes/no)"
 
@@ -51,7 +52,7 @@ try {
     Write-Host "SUCCESS: Encrypted credentials have been removed." -ForegroundColor Green
     Write-Host ""
     Write-Host "To create new credentials, run:" -ForegroundColor Cyan
-    Write-Host "  .\store-fmcreds.ps1" -ForegroundColor Cyan
+    Write-Host "  .\ps1\store-fmcreds.ps1" -ForegroundColor Cyan
     Write-Host ""
 
     exit 0
