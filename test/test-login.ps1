@@ -32,7 +32,7 @@ Write-Host ""
 # Get credentials
 Write-Host "Retrieving credentials..." -ForegroundColor Yellow
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-$credFilePath = Join-Path $scriptPath "fmcreds.encrypted"
+$credFilePath = Join-Path (Split-Path -Parent $scriptPath) "fmcreds.encrypted"
 
 if (-not (Test-Path $credFilePath)) {
     Write-Host "ERROR: Credential file not found: $credFilePath" -ForegroundColor Red

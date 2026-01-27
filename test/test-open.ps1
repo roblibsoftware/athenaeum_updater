@@ -30,7 +30,7 @@ Write-Host ""
 
 # Get credentials and login
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-$credFilePath = Join-Path $scriptPath "fmcreds.encrypted"
+$credFilePath = Join-Path (Split-Path -Parent $scriptPath) "fmcreds.encrypted"
 
 $lines = @(Get-Content $credFilePath)
 $fmaccount = $lines[0].ToString()
