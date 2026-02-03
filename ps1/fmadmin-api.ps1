@@ -12,7 +12,7 @@ param(
     [string]$Operation,
 
     [Parameter(Mandatory=$false)]
-    [string]$FileMakerHost = "localhost",
+    [string]$FileMakerHost,
 
     [Parameter(Mandatory=$false)]
     [string]$Username,
@@ -34,6 +34,16 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# Read FileMaker host from host.txt if not provided, default to localhost
+if (-not $FileMakerHost) {
+    $hostFile = Join-Path $PSScriptRoot "..\host.txt"
+    if (Test-Path $hostFile) {
+        $FileMakerHost = (Get-Content $hostFile -First 1).Trim()
+    } else {
+        $FileMakerHost = "localhost"
+    }
+}
 
 # Helper function to write debug output to stderr (so it doesn't interfere with stdout captures)
 function Write-DebugLog {

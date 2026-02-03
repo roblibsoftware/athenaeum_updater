@@ -93,8 +93,12 @@ if %ERRORLEVEL% neq 0 (
 set myaccount=migrate
 set mypassword=migrate
 
-rem FileMaker Server settings
-set fmhost=athenaeum.nz
+rem Read FileMaker host from host.txt, default to localhost if not found
+if exist "%~dp0host.txt" (
+    set /p fmhost=<"%~dp0host.txt"
+) else (
+    set fmhost=localhost
+)
 
 rem Set database filename - add .fmp12 extension if not already present
 echo DEBUG: Parameter 1 = %1 >> %log%

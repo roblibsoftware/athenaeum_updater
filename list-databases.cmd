@@ -20,8 +20,12 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-rem FileMaker Server settings
-set fmhost=athenaeum.nz
+rem Read FileMaker host from host.txt, default to localhost if not found
+if exist "%~dp0host.txt" (
+    set /p fmhost=<"%~dp0host.txt"
+) else (
+    set fmhost=localhost
+)
 
 echo Connecting to: %fmhost%
 echo.

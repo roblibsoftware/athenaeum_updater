@@ -2,10 +2,20 @@
 # This will show exactly what error FileMaker Server returns
 
 param(
-    [string]$FileMakerHost = "athenaeum.nz"
+    [string]$FileMakerHost
 )
 
 $ErrorActionPreference = "Stop"
+
+# Read FileMaker host from host.txt if not provided, default to localhost
+if (-not $FileMakerHost) {
+    $hostFile = Join-Path $PSScriptRoot "..\host.txt"
+    if (Test-Path $hostFile) {
+        $FileMakerHost = (Get-Content $hostFile -First 1).Trim()
+    } else {
+        $FileMakerHost = "localhost"
+    }
+}
 
 # Ignore SSL certificate errors
 if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationCallback').Type) {

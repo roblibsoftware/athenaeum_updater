@@ -1,9 +1,19 @@
 # Verbose login test - shows all request/response details
 param(
-    [string]$FileMakerHost = "localhost"
+    [string]$FileMakerHost
 )
 
 $ErrorActionPreference = "Stop"
+
+# Read FileMaker host from host.txt if not provided, default to localhost
+if (-not $FileMakerHost) {
+    $hostFile = Join-Path $PSScriptRoot "..\host.txt"
+    if (Test-Path $hostFile) {
+        $FileMakerHost = (Get-Content $hostFile -First 1).Trim()
+    } else {
+        $FileMakerHost = "localhost"
+    }
+}
 
 # Ignore SSL certificate errors
 if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationCallback').Type) {

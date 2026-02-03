@@ -2,10 +2,20 @@
 # Tests basic connectivity and API version
 
 param(
-    [string]$FileMakerHost = "athenaeum.nz"
+    [string]$FileMakerHost
 )
 
 $ErrorActionPreference = "Continue"
+
+# Read FileMaker host from host.txt if not provided, default to localhost
+if (-not $FileMakerHost) {
+    $hostFile = Join-Path $PSScriptRoot "..\host.txt"
+    if (Test-Path $hostFile) {
+        $FileMakerHost = (Get-Content $hostFile -First 1).Trim()
+    } else {
+        $FileMakerHost = "localhost"
+    }
+}
 
 # Ignore SSL certificate errors
 if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationCallback').Type) {
