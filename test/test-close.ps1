@@ -1,10 +1,19 @@
-# Test database close operation with verbose output
+# Test database close operation using PATCH method
+# FileMaker Database Update Tools v4.1.0 (Build: 2026-02-09)
 param(
     [string]$DatabaseName = "trial_athenaeum.fmp12",
     [string]$FileMakerHost
 )
 
 $ErrorActionPreference = "Stop"
+
+# Display version
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "FileMaker Database Update Tools v4.1.0" -ForegroundColor Cyan
+Write-Host "Build: 2026-02-09" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
 
 # Read FileMaker host from host.txt if not provided, default to localhost
 if (-not $FileMakerHost) {
@@ -93,23 +102,25 @@ Write-Host "  ID: $dbId" -ForegroundColor Green
 Write-Host "  Status: $($database.status)" -ForegroundColor Green
 Write-Host ""
 
-# Try close operation
+# Close database using PATCH method
 Write-Host "Attempting to close database..." -ForegroundColor Yellow
 Write-Host ""
 
+$dbUrl = "https://$FileMakerHost/fmi/admin/api/v2/databases/$dbId"
 $closeBody = @{
-    messageText = "Test close"
+    status = "CLOSED"
     force = $true
 } | ConvertTo-Json
 
-# Test 1: PUT /databases/{id}/close
-Write-Host "Test 1: PUT /databases/$dbId/close" -ForegroundColor Cyan
-$closeUrl1 = "https://$FileMakerHost/fmi/admin/api/v2/databases/$dbId/close"
-Write-Host "URL: $closeUrl1"
+Write-Host "PATCH $dbUrl" -ForegroundColor Cyan
+Write-Host "Body: $closeBody"
+Write-Host ""
+
 try {
-    $closeResponse = Invoke-WebRequest -Uri $closeUrl1 -Method Put -Headers $headers -Body $closeBody -UseBasicParsing
-    Write-Host "SUCCESS!" -ForegroundColor Green
-    Write-Host $closeResponse.Content
+    $closeResponse = Invoke-WebRequest -Uri $dbUrl -Method Patch -Headers $headers -Body $closeBody -UseBasicParsing
+    $closeObj = $closeResponse.Content | ConvertFrom-Json
+    Write-Host "SUCCESS! Database closed." -ForegroundColor Green
+    Write-Host "Status: $($closeObj.response.database.status)" -ForegroundColor Green
 }
 catch {
     Write-Host "FAILED: $($_.Exception.Response.StatusCode.value__) - $($_.Exception.Response.StatusDescription)" -ForegroundColor Red
@@ -117,50 +128,21 @@ catch {
         $stream = $_.Exception.Response.GetResponseStream()
         $stream.Position = 0
         $reader = New-Object System.IO.StreamReader($stream)
-        Write-Host "Response: $($reader.ReadToEnd())" -ForegroundColor Gray
+        $errorBody = $reader.ReadToEnd()
+        if (-not [string]::IsNullOrWhiteSpace($errorBody)) {
+            Write-Host "Response: $errorBody" -ForegroundColor Gray
+        }
         $reader.Close()
     } catch {}
-}
-Write-Host ""
 
-# Test 2: PATCH /databases/{id}
-Write-Host "Test 2: PATCH /databases/$dbId" -ForegroundColor Cyan
-$closeUrl2 = "https://$FileMakerHost/fmi/admin/api/v2/databases/$dbId"
-$patchBody = @{ status = "CLOSED"; force = $true } | ConvertTo-Json
-Write-Host "URL: $closeUrl2"
-try {
-    $closeResponse = Invoke-WebRequest -Uri $closeUrl2 -Method Patch -Headers $headers -Body $patchBody -UseBasicParsing
-    Write-Host "SUCCESS!" -ForegroundColor Green
-    Write-Host $closeResponse.Content
-}
-catch {
-    Write-Host "FAILED: $($_.Exception.Response.StatusCode.value__) - $($_.Exception.Response.StatusDescription)" -ForegroundColor Red
-}
-Write-Host ""
-
-# Test 3: PUT /databases/{id}
-Write-Host "Test 3: PUT /databases/$dbId with status=CLOSED" -ForegroundColor Cyan
-Write-Host "URL: $closeUrl2"
-try {
-    $closeResponse = Invoke-WebRequest -Uri $closeUrl2 -Method Put -Headers $headers -Body $patchBody -UseBasicParsing
-    Write-Host "SUCCESS!" -ForegroundColor Green
-    Write-Host $closeResponse.Content
-}
-catch {
-    Write-Host "FAILED: $($_.Exception.Response.StatusCode.value__) - $($_.Exception.Response.StatusDescription)" -ForegroundColor Red
-}
-Write-Host ""
-
-# Test 4: POST /databases/{id}/close
-Write-Host "Test 4: POST /databases/$dbId/close" -ForegroundColor Cyan
-Write-Host "URL: $closeUrl1"
-try {
-    $closeResponse = Invoke-WebRequest -Uri $closeUrl1 -Method Post -Headers $headers -Body $closeBody -UseBasicParsing
-    Write-Host "SUCCESS!" -ForegroundColor Green
-    Write-Host $closeResponse.Content
-}
-catch {
-    Write-Host "FAILED: $($_.Exception.Response.StatusCode.value__) - $($_.Exception.Response.StatusDescription)" -ForegroundColor Red
+    # Logout and exit
+    Write-Host ""
+    Write-Host "Logging out..." -ForegroundColor Yellow
+    $logoutUrl = "https://$FileMakerHost/fmi/admin/api/v2/user/auth/$token"
+    try {
+        Invoke-WebRequest -Uri $logoutUrl -Method Delete -Headers @{'Content-Type'='application/json'} -UseBasicParsing | Out-Null
+    } catch {}
+    exit 1
 }
 Write-Host ""
 

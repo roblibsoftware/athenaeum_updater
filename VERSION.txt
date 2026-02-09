@@ -1,0 +1,4 @@
+FileMaker Database Update Tools
+Version: 4.1.0
+Build Date: 2026-02-09
+(c) 2018-2026 Rob Russell, SumWare Consulting

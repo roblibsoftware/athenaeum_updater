@@ -8,6 +8,14 @@ rem Enable ANSI color support on Windows 10+ (Virtual Terminal Processing)
 rem Generate ESC character (ASCII 27) for ANSI color codes
 for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ESC=%%A"
 
+rem Display version information
+echo.
+echo %ESC%[106;30m========================================%ESC%[0m
+echo %ESC%[106;30mFileMaker Database Update Tools v4.1.0%ESC%[0m
+echo %ESC%[106;30mBuild: 2026-02-09%ESC%[0m
+echo %ESC%[106;30m========================================%ESC%[0m
+echo.
+
 rem %1 is file name  %2 is folder name
 
 IF "%1"=="" exit /b

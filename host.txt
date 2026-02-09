@@ -1,1 +1,1 @@
-athenaeum.nz
+localhost
