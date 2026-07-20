@@ -11,8 +11,8 @@ for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ES
 rem Display version information
 echo.
 echo %ESC%[106;30m========================================%ESC%[0m
-echo %ESC%[106;30mFileMaker Database Update Tools v4.2.0%ESC%[0m
-echo %ESC%[106;30mBuild: 2026-07-20%ESC%[0m
+echo %ESC%[106;30mFileMaker Database Update Tools v4.2.1%ESC%[0m
+echo %ESC%[106;30mBuild: 2026-07-21%ESC%[0m
 echo %ESC%[106;30m========================================%ESC%[0m
 echo.
 
@@ -274,10 +274,10 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo.
-echo "Migration completed - checking for errors..."
-echo %ESC%[101;93m
-findstr "error not invalid" %log%
-echo %ESC%[0m
+echo Migration summary:
+call :report "Tables not migrated"
+call :report "Fields with evaluation errors"
+call :report "Fields not migrated"
 echo.
 
 rem ============================================
@@ -371,3 +371,24 @@ if exist "%~dp0fmtoken.tmp" del /q "%~dp0fmtoken.tmp"
 
 echo.
 echo.
+goto :eof
+
+rem ============================================
+rem Subroutine: report a migration summary metric
+rem   %~1 = summary label (searched in the log and shown on screen)
+rem   Prints a green [OK] when the value is 0, a red [X] when it is not.
+rem ============================================
+:report
+set "val="
+for /f "tokens=2 delims=:" %%a in ('findstr /i /c:"%~1" %log%') do set "val=%%a"
+if defined val for /f "tokens=1 delims= " %%b in ("%val%") do set "val=%%b"
+if not defined val (
+    echo   %ESC%[93m[?]%ESC%[0m %~1: not found in log
+    goto :eof
+)
+if "%val%"=="0" (
+    echo   %ESC%[92m[OK]%ESC%[0m %~1: %val%
+) else (
+    echo   %ESC%[91m[X]%ESC%[0m %~1: %val%
+)
+goto :eof

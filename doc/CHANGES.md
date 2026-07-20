@@ -180,6 +180,12 @@ rem exit /b %ERRORLEVEL%
 
 ## Version History
 
+- **2026-07-21:** Migration summary output (v4.2.1)
+  - Replaced the post-migration `findstr "error not invalid"` dump (which
+    printed in alarming red even on a clean run) with a concise summary that
+    reads three key metrics from the log — *Tables not migrated*, *Fields
+    with evaluation errors*, *Fields not migrated* — and marks each `0` with
+    a green `[OK]` and any non-zero value with a red `[X]`.
 - **2026-07-20:** Single `config.json` and connectivity fixes
   - Consolidated `host.txt`, `live.txt`, and `file_list.txt` into a single
     `config.json` with `host`, `live`, and `files` (a JSON array) keys. Any
