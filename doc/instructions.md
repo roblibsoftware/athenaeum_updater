@@ -65,10 +65,10 @@ The three values:
 - **`host`** — the host name of the FileMaker Server. **Use the exact host
   name on the server's SSL certificate, not `localhost` or an IP address**
   (see the warning below).
-- **`live`** — the FileMaker Server **live databases folder**. Forward
-  slashes are fine (they are normalized to backslashes automatically), and a
-  trailing slash is optional. Databases are read from and written directly to
-  this folder (no per-file subfolders).
+- **`live`** — the FileMaker Server **live databases folder** (the root
+  `Databases` folder). Forward slashes are fine (they are normalized to
+  backslashes automatically), and a trailing slash is optional. Databases in
+  this folder, or in a subfolder of it, can be updated (see `files` below).
 - **`files`** — a JSON array of database file names to update, **without the
   `.fmp12` extension**. One name per entry. If a database lives in a
   **subfolder** of the live databases folder (FileMaker Server hosts
@@ -215,9 +215,10 @@ per-file log):
 2. Reads the live path and host from `config.json`.
 3. Authenticates with the FileMaker Server Admin API.
 4. Closes the live database (force-disconnects clients).
-5. Copies the live file from the live folder into `source\`.
+5. Copies the live file (from the live folder or its subfolder) into `source\`.
 6. Runs FileMaker Data Migration: live data (`source`) into the new clone,
-   producing the migrated file in `new\`.
+   producing the migrated file in `new\`, then prints a short summary of key
+   migration metrics (green `[OK]` / red `[X]`).
 7. Deletes the old file from the live folder and copies the migrated file
    back in its place.
 8. Re-opens the database and logs out of the Admin API.
@@ -231,8 +232,11 @@ database and logs out cleanly so the server is left in a usable state.
 
 - Each file writes a detailed log to `log\<file name>.txt`. Check it first
   when a run fails.
-- Migration errors are surfaced at the console and the log is scanned for
-  `error`, `not`, and `invalid`.
+- After a successful migration, a short summary is shown at the console -
+  *Tables not migrated*, *Fields with evaluation errors*, and *Fields not
+  migrated* - each marked green `[OK]` when `0` or red `[X]` when not. If the
+  migration itself fails, the actual error lines from the log are surfaced in
+  red and the update is aborted (the original database is reopened).
 - `download_clone.cmd` returns specific exit codes (3-7) identifying which
   download/extract stage failed - see `doc/CHANGES.md` for the table.
 - If the database name cannot be found or closed, confirm the name in
