@@ -45,8 +45,9 @@ echo.
 echo Fetching database list...
 echo.
 
-rem List databases using PowerShell and FileMaker Admin API
-powershell -ExecutionPolicy Bypass -Command "$token='%fmtoken%'; $baseUrl='https://%fmhost%/fmi/admin/api/v2'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationCallback').Type) { Add-Type @\"using System; using System.Net; using System.Net.Security; using System.Security.Cryptography.X509Certificates; public class ServerCertificateValidationCallback { public static void Ignore() { ServicePointManager.ServerCertificateValidationCallback = delegate { return true; }; } }\"@; [ServerCertificateValidationCallback]::Ignore() }; $headers = @{ 'Content-Type' = 'application/json'; 'Authorization' = \"Bearer $token\" }; try { $response = Invoke-RestMethod -Uri \"$baseUrl/databases\" -Method Get -Headers $headers; Write-Host \"`nDatabases on %fmhost%:\" -ForegroundColor Green; Write-Host \"================================\" -ForegroundColor Green; foreach ($db in $response.response.databases) { Write-Host \"`nFilename: $($db.filename)\" -ForegroundColor Cyan; Write-Host \"  Status: $($db.status)\"; Write-Host \"  Clients: $($db.clients)\"; if ($db.folder) { Write-Host \"  Folder: $($db.folder)\" } } Write-Host \"`nTotal databases: $($response.response.databases.Count)\" -ForegroundColor Yellow } catch { Write-Host \"Error: $($_.Exception.Message)\" -ForegroundColor Red }"
+rem List databases via the shared Admin API helper (uses the compiled cert
+rem callback, which handles the server's TLS renegotiation reliably)
+powershell -ExecutionPolicy Bypass -File "%~dp0ps1\fmadmin-api.ps1" -Operation list -FileMakerHost "%fmhost%" -Token "%fmtoken%"
 
 echo.
 echo.

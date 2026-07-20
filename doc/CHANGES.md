@@ -13,19 +13,16 @@ This document describes the improvements made to the FileMaker database updater 
 **Key Improvements:**
 
 #### Error Detection and Handling
-- **Tool Validation:** Checks if required tools (curl.exe and 7-Zip) exist before execution
-  - Exit code 1: curl.exe not found
-  - Exit code 2: 7z.exe not found
 - **Download Validation:**
-  - Checks curl exit code after download attempt
+  - Downloads the clone with PowerShell `Invoke-WebRequest`
   - Verifies downloaded file actually exists on disk
-  - Exit code 3: curl download failed
+  - Exit code 3: download failed
   - Exit code 4: downloaded file not found
 - **Extraction Validation:**
-  - Checks 7-Zip exit code
-  - Validates "Everything is Ok" message in extraction log
-  - Exit code 5: 7-Zip failed
-  - Exit code 6: extraction incomplete/corrupted
+  - Extracts with PowerShell `Expand-Archive`
+  - Confirms the clone file is present in the extracted archive
+  - Exit code 5: extraction failed
+  - Exit code 6: clone file not found in archive
 - **File Move Validation:**
   - Verifies file successfully moved to clone folder
   - Exit code 7: move operation failed
@@ -44,9 +41,9 @@ This document describes the improvements made to the FileMaker database updater 
 - Script exits immediately on any critical failure
 - Returns exit code 0 only on complete success
 
-### 2. update1.cmd
+### 2. athenaeum-update.cmd
 
-**Purpose:** Orchestrates the update process by downloading the clone file and processing files listed in one_file_list.txt.
+**Purpose:** Orchestrates the update process by downloading the clone file and processing files listed in file_list.txt.
 
 **Key Improvements:**
 
@@ -99,15 +96,13 @@ This document describes the improvements made to the FileMaker database updater 
 | Code | Meaning |
 |------|---------|
 | 0 | Success - file downloaded and extracted |
-| 1 | curl.exe not found at expected path |
-| 2 | 7z.exe not found at expected path |
-| 3 | curl failed to download file |
-| 4 | Downloaded file not found after curl completed |
-| 5 | 7-Zip extraction failed |
-| 6 | Extraction incomplete (missing "Everything is Ok" message) |
+| 3 | Invoke-WebRequest failed to download file |
+| 4 | Downloaded file not found after download |
+| 5 | Expand-Archive extraction failed |
+| 6 | Clone file not found in extracted archive |
 | 7 | Failed to move file to clone folder |
 
-### update1.cmd Exit Codes
+### athenaeum-update.cmd Exit Codes
 
 | Code | Meaning |
 |------|---------|
@@ -118,32 +113,34 @@ This document describes the improvements made to the FileMaker database updater 
 
 ### Basic Usage
 ```batch
-update1.cmd
+athenaeum-update.cmd
 ```
 
-### With Comments in one_file_list.txt
+### With Comments in file_list.txt
 ```
 # This is a comment line - will be skipped
 ; This is also a comment - will be skipped
 rem Another comment format - will be skipped
-trial_athenaeum    trial
+trial_athenaeum
 ```
+
+Each non-comment line lists a single database file name (no folder token). Files are read from and written back to the live folder configured in live.txt.
 
 ### Error Scenarios
 
 **Scenario 1: Download Failure**
 ```
 Downloading clone file...
-ERROR: Failed to download file from "https://..."
-Curl exit code: 6
+ERROR: Failed to download file from https://...
 ERROR: download_clone.cmd failed with error code 3
 Aborting update process.
 ```
 
-**Scenario 2: Missing Tool**
+**Scenario 2: Extraction Failure**
 ```
-ERROR: curl.exe not found at "C:\Program Files\curl\bin\curl.exe"
-ERROR: download_clone.cmd failed with error code 1
+Unzipping file...
+ERROR: Failed to unzip file
+ERROR: download_clone.cmd failed with error code 5
 Aborting update process.
 ```
 
@@ -158,7 +155,7 @@ Aborting update process.
 6. **Configuration File:** Move hardcoded paths to config file
 
 ### Strictness Options
-The current implementation continues processing files even if individual update.cmd calls fail. To change this behavior to abort on first failure, uncomment this line in update1.cmd:
+The current implementation continues processing files even if individual update.cmd calls fail. To change this behavior to abort on first failure, uncomment this line in athenaeum-update.cmd:
 
 ```batch
 rem exit /b %ERRORLEVEL%
@@ -166,24 +163,32 @@ rem exit /b %ERRORLEVEL%
 
 ## Testing Recommendations
 
-1. Test with missing curl.exe (rename temporarily)
-2. Test with missing 7z.exe (rename temporarily)
-3. Test with invalid download URL
-4. Test with various comment formats in one_file_list.txt
-5. Test with blank lines in one_file_list.txt
+1. Test the dry run (`athenaeum-update.cmd /dryrun`)
+2. Test with an invalid download URL
+3. Test with a corrupted/incomplete archive
+4. Test with various comment formats in file_list.txt
+5. Test with blank lines in file_list.txt
 6. Test network disconnection during download
-7. Test with corrupted zip file
+7. Test with missing or wrong credentials
 
 ## Compatibility
 
 - **Windows Version:** Windows 7 and later
 - **Required Tools:**
-  - curl.exe (C:\Program Files\curl\bin\curl.exe)
-  - 7-Zip (C:\Program Files\7-Zip\7z.exe)
+  - Windows PowerShell 5.1 (downloads and extraction use `Invoke-WebRequest` and `Expand-Archive` natively - no curl or 7-Zip)
 - **Dependencies:** update.cmd must exist and function properly
 
 ## Version History
 
+- **2026-06-30:** Single-file simplification
+  - Renamed `batch-one.cmd` to `athenaeum-update.cmd` and `one_file_list.txt` to `file_list.txt`
+  - `file_list.txt` now uses a single token per line (file name only); the folder token was removed
+  - `update.cmd` takes only `%1` (file name); the `%2` folder parameter and its empty-argument guard were removed
+  - Moved the hard-coded live database path out of `update.cmd` into its own `live.txt` config file (read like `host.txt`, with the previous path as the fallback default)
+  - Databases are now read from and written directly to the live folder (no per-file subfolder)
+  - Added a dry-run mode to `athenaeum-update.cmd` (`/dryrun`) that validates config files and credentials, logs in to the Admin API and lists the databases on the server, and tests download capability against a small file - all without downloading the clone or changing any database
+  - Corrected the docs to reflect the PowerShell-native download/extract (`Invoke-WebRequest` + `Expand-Archive`); curl and 7-Zip are no longer used
+  - Added `doc/instructions.md` documenting the setup, testing, and execution processes
 - **2026-01-23:** Initial improvements - Added error handling and comment filtering
 - **Previous:** Original implementation with basic functionality
 
@@ -191,5 +196,5 @@ rem exit /b %ERRORLEVEL%
 
 Improvements implemented by Claude Code based on user requirements.
 
-Original scripts: © 2018-2021 Rob Russell, SumWare Consulting
+Original scripts: © 2018-2026 Rob Russell, SumWare Consulting
 License: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)

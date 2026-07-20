@@ -2,17 +2,10 @@
 
 ## Overview
 
-This guide explains how to securely store and retrieve FileMaker admin credentials for the updater scripts. The new system replaces the insecure plain-text `setlog.cmd` with encrypted credential storage using Windows Data Protection API (DPAPI).
+This guide explains how to securely store and retrieve FileMaker admin credentials for the updater scripts with encrypted credential storage using Windows Data Protection API (DPAPI).
 
-## Security Improvements
+## Security
 
-### Old Method (Insecure)
-- Credentials stored in plain text in `setlog.cmd`
-- Passwords visible to anyone with file access
-- Easy to accidentally commit to version control
-- No encryption or protection
-
-### New Method (Secure)
 - Credentials encrypted using Windows DPAPI
 - Encrypted file can only be decrypted by the Windows user account that created it
 - Credentials excluded from version control via .gitignore
@@ -98,29 +91,19 @@ test-credentials.cmd
 powershell -ExecutionPolicy Bypass -File .\ps1\get-fmcreds.ps1
 ```
 
-**Expected output:**
+**Sample expected output:**
 ```
-set "fmaccount=athenaeum_admin"
-set "fmpassword=yKaoCpwTi6twCh2ik1fSTF0kMTtF"
+set "fmaccount=fmadmin"
+set "fmpassword=y3K6f#s!4etF7"
 ```
 
 ### Step 3: Run Update Scripts
 
-Your batch scripts now automatically retrieve credentials. No changes needed to your workflow:
-
-```batch
-update1.cmd
-```
-
-or
-
-```batch
-all.cmd
-```
+athenaeum-update.cmd automatically retrieve credentials, 
 
 ## How Batch Scripts Use Credentials
 
-The batch scripts now include this code block to retrieve credentials:
+athenaeum-update.cmd includes this code block to retrieve credentials:
 
 ```batch
 rem Retrieve credentials from encrypted storage using PowerShell
@@ -138,21 +121,6 @@ This:
 4. Variables `%fmaccount%` and `%fmpassword%` are now available
 5. If retrieval fails, the script exits with an error
 
-## Updated Scripts
-
-The following scripts now use encrypted credentials:
-
-### update.cmd
-- Line ~30: Retrieves credentials from encrypted storage
-- Used for: fmsadmin list, close, and open commands
-
-### all.cmd
-- Line ~14: Retrieves credentials from encrypted storage
-- Used for: fmsadmin disconnect and open commands
-
-### update1.cmd
-- Calls update.cmd (which retrieves credentials)
-
 ## User-Friendly Batch File Wrappers
 
 For easier use, batch file wrappers are provided that handle all the PowerShell execution policy complexities:
@@ -164,10 +132,8 @@ For easier use, batch file wrappers are provided that handle all the PowerShell 
 | **clear-credentials.cmd** | Remove stored credentials | Double-click or run from CMD |
 
 **Benefits:**
-- No need to remember `-ExecutionPolicy Bypass`
 - Works from CMD, PowerShell, or double-click
 - Input prompts work correctly (no nested session issues)
-- Easy to remember and use
 
 **Recommendation:** Use the `.cmd` files for interactive credential management, and let the update scripts handle the PowerShell calls automatically.
 
@@ -298,33 +264,6 @@ powershell -ExecutionPolicy Bypass -File .\ps1\clear-fmcreds.ps1 -Force
 ❌ Never store the encrypted file in a publicly accessible location
 ❌ Never use the same password across multiple systems
 
-## Migrating from Old System
-
-### Step 1: Store New Credentials
-Run `store-fmcreds.ps1` to create encrypted storage.
-
-### Step 2: Test New System
-Test that scripts work with new credential retrieval.
-
-### Step 3: Secure Old Credentials
-Once confirmed working:
-1. Delete or move `setlog.cmd` to a secure backup location
-2. The file is already excluded from git via `.gitignore`
-
-### Step 4: Verify Git History (Optional)
-If `setlog.cmd` was previously committed to git, consider:
-```bash
-# Remove from git history (WARNING: Rewrites history!)
-git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch setlog.cmd" \
-  --prune-empty --tag-name-filter cat -- --all
-
-# Force push (if applicable)
-git push origin --force --all
-```
-
-**Important:** Change the password after removing it from git history!
-
 ## File Permissions Recommendations
 
 ### fmcreds.encrypted
@@ -360,32 +299,6 @@ If you lose access to the Windows user account that encrypted credentials:
 - You must create new credentials using `store-fmcreds.ps1`
 - Log in as the new service account and run the storage script again
 
-## Advanced Scenarios
-
-### Multiple Servers
-Each server needs its own `fmcreds.encrypted` file because:
-- Files are tied to the Windows user account on that specific machine
-- Credentials encrypted on Server A cannot be decrypted on Server B
-
-**Solution:** Run `store-fmcreds.ps1` on each server.
-
-### Different Credentials for Different Scripts
-If you need different credentials for different operations:
-
-1. Create multiple encrypted files:
-   - `fmcreds_admin.encrypted`
-   - `fmcreds_readonly.encrypted`
-
-2. Modify `get-fmcreds.ps1` to accept a parameter:
-```powershell
-param([string]$CredentialName = "fmcreds")
-$credFilePath = Join-Path $PSScriptRoot "$CredentialName.encrypted"
-```
-
-3. Call from batch with parameter:
-```batch
-for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0get-fmcreds.ps1" -CredentialName fmcreds_admin') do %%i
-```
 
 ## Technical Details
 
@@ -424,15 +337,6 @@ A: It uses the same underlying technology (DPAPI). Both are equally secure.
 
 **Q: Should I use Group Managed Service Accounts (gMSA) instead?**
 A: If you're in an Active Directory environment and the FileMaker server supports it, gMSA is more secure because passwords are automatically rotated.
-
-## Changelog
-
-**2026-01-23**
-- Initial implementation of DPAPI-based credential storage
-- Created store-fmcreds.ps1 and get-fmcreds.ps1
-- Updated update.cmd and all.cmd to use encrypted credentials
-- Added .gitignore entries for credential files
-- Deprecated setlog.cmd (now excluded from version control)
 
 ## Credits
 

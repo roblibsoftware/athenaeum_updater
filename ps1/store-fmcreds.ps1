@@ -58,16 +58,22 @@ try {
         Write-Host "Please enter the FileMaker admin credentials to store securely." -ForegroundColor Green
         Write-Host ""
 
-        # Prompt for credentials
-        $cred = Get-Credential -Message "Enter FileMaker admin credentials"
+        # Prompt for credentials directly in the console. This avoids the
+        # Get-Credential GUI dialog, which can open behind the terminal window
+        # or be silently cancelled, and works in any console session.
+        $Username = Read-Host "FileMaker admin username"
 
-        if (-not $cred) {
-            Write-Error "No credentials provided. Operation cancelled."
+        if ([string]::IsNullOrWhiteSpace($Username)) {
+            Write-Error "No username provided. Operation cancelled."
             exit 1
         }
 
-        $Username = $cred.UserName
-        $Password = $cred.Password
+        $Password = Read-Host "FileMaker admin password" -AsSecureString
+
+        if (-not $Password -or $Password.Length -eq 0) {
+            Write-Error "No password provided. Operation cancelled."
+            exit 1
+        }
     }
 
     # Validate username

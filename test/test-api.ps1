@@ -33,7 +33,18 @@ if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationC
 "@
 }
 [ServerCertificateValidationCallback]::Ignore()
+
+# Enable TLS 1.2 and (where the OS/.NET supports it) TLS 1.3, rather than
+# forcing TLS 1.2 only. Newer FileMaker Server builds may negotiate TLS 1.3,
+# and pinning to 1.2 alone can cause a handshake failure that surfaces as
+# "The underlying connection was closed: An unexpected error occurred on a send."
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+try {
+    [Net.ServicePointManager]::SecurityProtocol = `
+        [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls13
+} catch {
+    # Tls13 enum not available on this .NET build; TLS 1.2 remains enabled.
+}
 
 Write-Host "Testing FileMaker Server Admin API" -ForegroundColor Cyan
 Write-Host "Host: $FileMakerHost" -ForegroundColor Cyan
@@ -49,6 +60,9 @@ try {
 }
 catch {
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.Exception.InnerException) {
+        Write-Host "  Reason: $($_.Exception.InnerException.Message)" -ForegroundColor Red
+    }
     if ($_.Exception.Response) {
         Write-Host "  Status: $($_.Exception.Response.StatusCode.value__)" -ForegroundColor Red
     }
@@ -66,6 +80,9 @@ try {
 }
 catch {
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.Exception.InnerException) {
+        Write-Host "  Reason: $($_.Exception.InnerException.Message)" -ForegroundColor Red
+    }
     if ($_.Exception.Response) {
         Write-Host "  Status: $($_.Exception.Response.StatusCode.value__)" -ForegroundColor Red
     }
@@ -83,6 +100,9 @@ try {
 }
 catch {
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.Exception.InnerException) {
+        Write-Host "  Reason: $($_.Exception.InnerException.Message)" -ForegroundColor Red
+    }
     if ($_.Exception.Response) {
         Write-Host "  Status: $($_.Exception.Response.StatusCode.value__)" -ForegroundColor Red
         Write-Host "  Status Description: $($_.Exception.Response.StatusDescription)" -ForegroundColor Red

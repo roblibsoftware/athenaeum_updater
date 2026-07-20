@@ -8,7 +8,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('login', 'close', 'open', 'logout', 'get-status')]
+    [ValidateSet('login', 'close', 'open', 'logout', 'get-status', 'list')]
     [string]$Operation,
 
     [Parameter(Mandatory=$false)]
@@ -362,6 +362,28 @@ try {
                 Write-Error "Failed to get database status"
                 exit 1
             }
+        }
+
+        'list' {
+            # List all databases on the server
+            if (-not $Token) {
+                Write-Error "Token required for list operation"
+                exit 1
+            }
+
+            $headers = @{
+                'Content-Type' = 'application/json'
+                'Authorization' = "Bearer $Token"
+            }
+
+            $listUrl = "$baseUrl/databases"
+            $response = Invoke-RestMethod -Uri $listUrl -Method Get -Headers $headers
+
+            foreach ($db in $response.response.databases) {
+                Write-Host ("  - {0}  [{1}]  (clients: {2})" -f $db.filename, $db.status, $db.clients) -ForegroundColor Cyan
+            }
+            Write-Host ("  Total databases: {0}" -f $response.response.databases.Count) -ForegroundColor Yellow
+            exit 0
         }
 
         'logout' {

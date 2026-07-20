@@ -1,5 +1,5 @@
 @echo off
-rem   © 2018-2021 Rob Russell, SumWare Consulting
+rem   © 2018-2026 Rob Russell, SumWare Consulting
 rem   Creative Commons licence
 rem   Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 rem   https://creativecommons.org/licenses/by-sa/4.0/
@@ -16,12 +16,12 @@ echo %ESC%[106;30mBuild: 2026-02-09%ESC%[0m
 echo %ESC%[106;30m========================================%ESC%[0m
 echo.
 
-rem %1 is file name  %2 is folder name
+rem %1 is file name
 
 IF "%1"=="" exit /b
 
 echo.
-echo             processing %ESC%[101;93m%1%ESC%[0m in folder %2
+echo             processing %ESC%[101;93m%1%ESC%[0m
 
 
 SET ThisScriptsDirectory=%~dp0
@@ -87,7 +87,13 @@ echo.
 
 echo "delete log file %log%"
 del /q %log%
-set live=A:\live_databases\
+
+rem Read live database path from live.txt, default to standard location if not found
+if exist "%~dp0live.txt" (
+    set /p live=<"%~dp0live.txt"
+) else (
+    set live=C:\Program Files\FileMaker\FileMaker Server\Data\Databases\
+)
 
 rem Retrieve credentials from encrypted storage using PowerShell
 rem Redirect stderr to prevent error messages from being executed as commands
@@ -120,7 +126,6 @@ if %ERRORLEVEL% neq 0 (
 )
 
 if "%~1"=="" goto END0
-if "%~2"=="" goto END0
 
 rem ============================================
 rem Step 1: Login to FileMaker Server Admin API
@@ -196,7 +201,7 @@ echo.
 echo %ESC%[102;30mStep 3: Copying live database to working directory...%ESC%[0m
 
 echo "copy live to source folder"
-copy "%live%%2\%1.fmp12" "%sourcefolder%source\" >> %log% 2>&1
+copy "%live%%1.fmp12" "%sourcefolder%source\" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to copy live database to source folder%ESC%[0m
@@ -272,7 +277,7 @@ echo.
 echo %ESC%[102;30mStep 5: Removing old database from server...%ESC%[0m
 
 echo "delete (old) live"
-del "%live%%2\%1.fmp12" >> %log% 2>&1
+del "%live%%1.fmp12" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mWARNING: Failed to delete old database file%ESC%[0m
@@ -286,7 +291,7 @@ echo.
 echo %ESC%[102;30mStep 6: Copying updated database to server...%ESC%[0m
 
 echo "copy updated file back to live"
-copy "%tgt%" "%live%%2\" >> %log% 2>&1
+copy "%tgt%" "%live%" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to copy updated database to live folder%ESC%[0m
