@@ -35,14 +35,13 @@ FILES=(
     clear-credentials.cmd
     list-databases.cmd
     # Config / templates
-    host.txt
-    live.txt
-    file_list.txt
+    config.json
     VERSION.txt
     # PowerShell helpers
     ps1/clear-fmcreds.ps1
     ps1/download_clone.ps1
     ps1/fmadmin-api.ps1
+    ps1/get-config.ps1
     ps1/get-fmcreds.ps1
     ps1/store-fmcreds.ps1
     # End-user documentation

@@ -1,2 +1,0 @@
-# raw athenaeum file name(s) no extension needed
-athenaeum

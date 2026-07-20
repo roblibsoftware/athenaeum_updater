@@ -11,8 +11,8 @@ for /F "delims=" %%A in ('powershell -NoProfile -Command "[char]27"') do set "ES
 rem Display version information
 echo.
 echo %ESC%[106;30m========================================%ESC%[0m
-echo %ESC%[106;30mFileMaker Database Update Tools v4.1.0%ESC%[0m
-echo %ESC%[106;30mBuild: 2026-02-09%ESC%[0m
+echo %ESC%[106;30mFileMaker Database Update Tools v4.2.0%ESC%[0m
+echo %ESC%[106;30mBuild: 2026-07-20%ESC%[0m
 echo %ESC%[106;30m========================================%ESC%[0m
 echo.
 
@@ -23,14 +23,22 @@ IF "%1"=="" exit /b
 echo.
 echo             processing %ESC%[101;93m%1%ESC%[0m
 
+rem A files entry may be "name" or "subfolder/name" relative to the live folder
+rem (e.g. "clips/athenaeum_clips" for a database in a Databases subfolder).
+rem   relpath  = path relative to the live folder, no extension (backslash-normalized)
+rem   basename = the bare file name, used for the working files and the Admin API
+set "relpath=%~1"
+set "relpath=%relpath:/=\%"
+if /i "%relpath:~-6%"==".fmp12" set "relpath=%relpath:~0,-6%"
+for %%F in ("%relpath%") do set "basename=%%~nF"
 
 SET ThisScriptsDirectory=%~dp0
 SET sourcefolder=%ThisScriptsDirectory%
-SET src="%sourcefolder%source\%1.fmp12"
+SET src="%sourcefolder%source\%basename%.fmp12"
 SET bak="%sourcefolder%backup\"
 SET cln="%sourcefolder%clone\athenaeum_clone.fmp12"
-SET tgt="%sourcefolder%new\%1.fmp12"
-SET log="%sourcefolder%log\%1.txt"
+SET tgt="%sourcefolder%new\%basename%.fmp12"
+SET log="%sourcefolder%log\%basename%.txt"
 
 rem ============================================
 rem Create required directories if they don't exist
@@ -88,12 +96,18 @@ echo.
 echo "delete log file %log%"
 del /q %log%
 
-rem Read live database path from live.txt, default to standard location if not found
-if exist "%~dp0live.txt" (
-    set /p live=<"%~dp0live.txt"
-) else (
-    set live=C:\Program Files\FileMaker\FileMaker Server\Data\Databases\
+rem Read live database path from config.json (compulsory)
+set "live="
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-config.ps1" -Key live') do set "live=%%i"
+if not defined live (
+    echo %ESC%[101;93mERROR: Could not read 'live' path from config.json%ESC%[0m
+    exit /b 1
 )
+
+rem Full path to the live database file, and the folder that holds it
+rem (livedir is the live folder plus any subfolder from the entry)
+set "livefile=%live%%relpath%.fmp12"
+for %%F in ("%livefile%") do set "livedir=%%~dpF"
 
 rem Retrieve credentials from encrypted storage using PowerShell
 rem Redirect stderr to prevent error messages from being executed as commands
@@ -107,23 +121,18 @@ if %ERRORLEVEL% neq 0 (
 set myaccount=migrate
 set mypassword=migrate
 
-rem Read FileMaker host from host.txt, default to localhost if not found
-if exist "%~dp0host.txt" (
-    set /p fmhost=<"%~dp0host.txt"
-) else (
-    set fmhost=localhost
+rem Read FileMaker host from config.json (compulsory)
+set "fmhost="
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-config.ps1" -Key host') do set "fmhost=%%i"
+if not defined fmhost (
+    echo %ESC%[101;93mERROR: Could not read 'host' from config.json%ESC%[0m
+    exit /b 1
 )
 
-rem Set database filename - add .fmp12 extension if not already present
+rem Database name for the Admin API is the bare file name (no folder)
+set "dbfilename=%basename%.fmp12"
 echo DEBUG: Parameter 1 = %1 >> %log%
-echo %1 | findstr /i "\.fmp12$" >nul
-if %ERRORLEVEL% neq 0 (
-    set dbfilename=%1.fmp12
-    echo DEBUG: Added extension, dbfilename = %1.fmp12 >> %log%
-) else (
-    set dbfilename=%1
-    echo DEBUG: Extension already present, dbfilename = %1 >> %log%
-)
+echo DEBUG: relpath = %relpath% ^| basename = %basename% ^| livefile = %livefile% >> %log%
 
 if "%~1"=="" goto END0
 
@@ -201,10 +210,11 @@ echo.
 echo %ESC%[102;30mStep 3: Copying live database to working directory...%ESC%[0m
 
 echo "copy live to source folder"
-copy "%live%%1.fmp12" "%sourcefolder%source\" >> %log% 2>&1
+copy "%livefile%" "%sourcefolder%source\" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to copy live database to source folder%ESC%[0m
+    echo %ESC%[101;93m       tried: %livefile%%ESC%[0m
 
     rem Try to reopen the database before exiting
     echo Attempting to reopen database...
@@ -277,7 +287,7 @@ echo.
 echo %ESC%[102;30mStep 5: Removing old database from server...%ESC%[0m
 
 echo "delete (old) live"
-del "%live%%1.fmp12" >> %log% 2>&1
+del "%livefile%" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mWARNING: Failed to delete old database file%ESC%[0m
@@ -291,7 +301,7 @@ echo.
 echo %ESC%[102;30mStep 6: Copying updated database to server...%ESC%[0m
 
 echo "copy updated file back to live"
-copy "%tgt%" "%live%" >> %log% 2>&1
+copy "%tgt%" "%livedir%" >> %log% 2>&1
 
 if %ERRORLEVEL% neq 0 (
     echo %ESC%[101;93mERROR: Failed to copy updated database to live folder%ESC%[0m

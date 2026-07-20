@@ -1,0 +1,14 @@
+{
+  "_comment": "Athenaeum single-file updater configuration. Edit the three values: host, live, files.",
+
+  "host": "database.kings.school.nz",
+  "_comment_host": "EXACT host name on the FileMaker Server SSL certificate. Not 'localhost' or an IP - the server only completes a TLS handshake for its certificate's name.",
+
+  "live": "C:/Program Files/FileMaker/FileMaker Server/Data/Databases",
+  "_comment_live": "FileMaker Server live databases folder. Forward slashes are fine (normalized automatically); trailing slash optional.",
+
+  "files": [
+    "athenaeum"
+  ],
+  "_comment_files": "Database file names to update, one per array entry, WITHOUT the .fmp12 extension. Must match the live file names (see list-databases.cmd). For a database in a Databases SUBFOLDER, include the subfolder with a forward slash, e.g. 'clips/athenaeum_clips'. Every listed file is migrated into the one downloaded athenaeum clone, so only list files that share the athenaeum schema."
+}

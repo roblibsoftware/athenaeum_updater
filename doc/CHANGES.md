@@ -180,6 +180,21 @@ rem exit /b %ERRORLEVEL%
 
 ## Version History
 
+- **2026-07-20:** Single `config.json` and connectivity fixes
+  - Consolidated `host.txt`, `live.txt`, and `file_list.txt` into a single
+    `config.json` with `host`, `live`, and `files` (a JSON array) keys. Any
+    other key (e.g. `_comment`) is ignored, so the file can be self-documenting.
+  - `config.json` is now **compulsory** — a new `ps1/get-config.ps1` reader
+    validates it and fails loudly on a missing file, invalid JSON, or a
+    missing/empty value; there are no built-in defaults. The `live` path
+    accepts forward slashes (normalized to `\`, trailing slash guaranteed).
+  - `store-fmcreds.ps1` now prompts inline via `Read-Host` instead of the
+    `Get-Credential` GUI dialog (which could open hidden or be cancelled).
+  - Added a `list` operation to `fmadmin-api.ps1`; `list-databases.cmd` and
+    dry-run step 4 now call it instead of inline PowerShell. The compiled
+    certificate callback reliably handles the server's TLS renegotiation
+    (an inline scriptblock callback failed on send).
+  - `test-api.ps1` enables TLS 1.3 where available and reports inner exceptions.
 - **2026-06-30:** Single-file simplification
   - Renamed `batch-one.cmd` to `athenaeum-update.cmd` and `one_file_list.txt` to `file_list.txt`
   - `file_list.txt` now uses a single token per line (file name only); the folder token was removed

@@ -9,10 +9,8 @@ Migration, and redeploys the updated file to the FileMaker Server.
 
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
-  - [1. Configure host.txt](#1-configure-hosttxt)
-  - [2. Configure live.txt](#2-configure-livetxt)
-  - [3. Configure file_list.txt](#3-configure-file_listtxt)
-  - [4. Store credentials](#4-store-credentials)
+  - [1. Configure config.json](#1-configure-configjson)
+  - [2. Store credentials](#2-store-credentials)
 - [Testing the setup](#testing-the-setup)
   - [Test 1: Stored credentials](#test-1-stored-credentials)
   - [Test 2: List databases on the server](#test-2-list-databases-on-the-server)
@@ -43,72 +41,69 @@ currently fixed to `migrate` / `migrate` inside `update.cmd`.
 
 ## Setup
 
-All configuration lives in three small text files plus an encrypted
-credential file. Configure them in this order.
+All configuration lives in a single file, `config.json`, plus an encrypted
+credential file.
 
-### 1. Configure host.txt
+### 1. Configure config.json
 
-`host.txt` holds the single host name of the FileMaker Server, on one line.
-If the file is missing, the tools default to `localhost`.
+`config.json` holds all three settings. It is **required** — if it is
+missing, is not valid JSON, or is missing any of `host`, `live`, or `files`,
+every tool aborts with a clear error (there are no built-in defaults).
 
+```json
+{
+  "host": "database.kings.school.nz",
+  "live": "C:/Program Files/FileMaker/FileMaker Server/Data/Databases",
+  "files": [
+    "athenaeum"
+  ]
+}
 ```
-database.kings.school.nz
-```
 
-> **Important — use the exact host name on the server's SSL certificate, not
-> `localhost` or an IP address.** On Windows, FileMaker Server serves the
-> Admin API through IIS/HTTP.sys, and the SSL certificate is bound to a
-> specific host name (an SNI binding). HTTP.sys only completes a TLS
-> handshake when the client sends that exact name. Connecting as `localhost`
-> or by IP sends no matching name, so the server silently resets the
-> connection and every tool fails with errors like *"The underlying
+The three values:
+
+- **`host`** — the host name of the FileMaker Server. **Use the exact host
+  name on the server's SSL certificate, not `localhost` or an IP address**
+  (see the warning below).
+- **`live`** — the FileMaker Server **live databases folder**. Forward
+  slashes are fine (they are normalized to backslashes automatically), and a
+  trailing slash is optional. Databases are read from and written directly to
+  this folder (no per-file subfolders).
+- **`files`** — a JSON array of database file names to update, **without the
+  `.fmp12` extension**. One name per entry. If a database lives in a
+  **subfolder** of the live databases folder (FileMaker Server hosts
+  databases in subfolders too), include the subfolder with a forward slash —
+  e.g. `"clips/athenaeum_clips"` for `...\Databases\clips\athenaeum_clips.fmp12`.
+  Every listed file is migrated into the one downloaded athenaeum clone, so
+  only list files that share the athenaeum schema.
+
+You can add documentation to the file using any extra key (for example
+`_comment`, `_comment_host`): only `host`, `live`, and `files` are read, so
+any other key is ignored. Standard JSON rules apply — no comment lines, and
+no trailing comma after the last array entry.
+
+> **Important — the `host` must be the exact host name on the server's SSL
+> certificate, not `localhost` or an IP address.** On Windows, FileMaker
+> Server serves the Admin API through IIS/HTTP.sys, and the SSL certificate
+> is bound to a specific host name (an SNI binding). HTTP.sys only completes
+> a TLS handshake when the client sends that exact name. Connecting as
+> `localhost` or by IP sends no matching name, so the server silently resets
+> the connection and every tool fails with errors like *"The underlying
 > connection was closed: An unexpected error occurred on a send"* or a TLS
 > reset — even when run directly on the server machine.
 >
-> Set `host.txt` to the certificate's host name (e.g.
-> `database.kings.school.nz`) and make sure that name resolves to, and can
-> reach, the server. To confirm before running the tools:
+> Make sure the name resolves to, and can reach, the server. To confirm
+> before running the tools:
 >
 > ```
-> curl.exe -v -k https://<host-from-host.txt>/fmi/admin/api/v2/user/auth
+> curl.exe -v -k https://<host-from-config.json>/fmi/admin/api/v2/user/auth
 > ```
 >
 > A completed TLS handshake and an HTTP `405` (with a FileMaker JSON body)
 > means the host name is correct. A `Connection was reset` means the name
 > doesn't match the certificate binding.
 
-### 2. Configure live.txt
-
-`live.txt` holds the path to the FileMaker Server **live databases folder**,
-on one line, including the trailing backslash. This is where databases are
-read from and written back to. If the file is missing, `update.cmd` falls
-back to the standard install path.
-
-```
-C:\Program Files\FileMaker\FileMaker Server\Data\Databases\
-```
-
-Databases are read from and written directly to this folder (there are no
-per-file subfolders).
-
-### 3. Configure file_list.txt
-
-`file_list.txt` lists the databases to update - **one file name per line**,
-without the `.fmp12` extension and without any folder. Comment lines are
-ignored.
-
-```
-# raw athenaeum file names
-trial_athenaeum
-```
-
-Comment / blank line rules:
-
-- Lines starting with `#`, `;`, or `rem` are skipped.
-- Blank lines are skipped automatically.
-- Each remaining line is a single database file name (one token, no spaces).
-
-### 4. Store credentials
+### 2. Store credentials
 
 The FileMaker Server admin credentials are stored encrypted with the Windows
 Data Protection API (DPAPI), so they can only be decrypted by the **same
@@ -155,8 +150,8 @@ list-databases.cmd
 ```
 
 This logs in to the Admin API and prints every database the server knows
-about, with its status. Use it to confirm that the names in
-`file_list.txt` match the live file names exactly.
+about, with its status. Use it to confirm that the names in the `files`
+array of `config.json` match the live file names exactly.
 
 ### Test 3: Dry run
 
@@ -171,10 +166,10 @@ athenaeum-update.cmd /dryrun
 
 The dry run checks, in order:
 
-1. `host.txt`, `live.txt`, and `file_list.txt` are present (and shows the host and live path).
+1. `config.json` is present and valid, and shows the host, live path, and the files to update.
 2. The stored credentials can be retrieved.
 3. A login to the FileMaker Server Admin API succeeds.
-4. Using the token from step 3, it lists the databases on the FileMaker Server, then logs out. Compare this list against the names in `file_list.txt`.
+4. Using the token from step 3, it lists the databases on the FileMaker Server, then logs out. Compare this list against the names in `config.json`.
 5. The download capability works - it fetches a small test file (`https://librarysoftware.co.nz/downloads/build.txt`) from the same host. This confirms the host domain is reachable and not blocked by a firewall, without downloading the full clone.
 
 If every step reports `[OK]`, the setup is ready for a live run.
@@ -201,7 +196,7 @@ The orchestrator will:
 
 1. Run `download_clone.cmd` to download and extract the fresh clone into
    `clone\athenaeum_clone.fmp12`. If this fails, the whole run aborts.
-2. Read `file_list.txt` and, for each non-comment file name, call
+2. Read the `files` array from `config.json` and, for each entry, call
    `update.cmd <file name>`.
 
 A warning is shown if `update.cmd` fails for an individual file, but
@@ -217,7 +212,7 @@ For each file, `update.cmd` performs these steps (all detail is written to a
 per-file log):
 
 1. Ensures the working folders exist (`source`, `backup`, `clone`, `new`, `log`).
-2. Reads the live path from `live.txt` and the host from `host.txt`.
+2. Reads the live path and host from `config.json`.
 3. Authenticates with the FileMaker Server Admin API.
 4. Closes the live database (force-disconnects clients).
 5. Copies the live file from the live folder into `source\`.
@@ -241,7 +236,7 @@ database and logs out cleanly so the server is left in a usable state.
 - `download_clone.cmd` returns specific exit codes (3-7) identifying which
   download/extract stage failed - see `doc/CHANGES.md` for the table.
 - If the database name cannot be found or closed, confirm the name in
-  `file_list.txt` against the output of `list-databases.cmd`.
+  `config.json` against the output of `list-databases.cmd`.
 
 ---
 

@@ -35,13 +35,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Read FileMaker host from host.txt if not provided, default to localhost
+# Read FileMaker host from config.json if not provided (config.json is compulsory)
 if (-not $FileMakerHost) {
-    $hostFile = Join-Path $PSScriptRoot "..\host.txt"
-    if (Test-Path $hostFile) {
-        $FileMakerHost = (Get-Content $hostFile -First 1).Trim()
-    } else {
-        $FileMakerHost = "localhost"
+    $configPath = Join-Path (Split-Path $PSScriptRoot -Parent) "config.json"
+    if (-not (Test-Path $configPath)) {
+        Write-Error "config.json not found at $configPath"
+        exit 1
+    }
+    $FileMakerHost = "$(((Get-Content -Path $configPath -Raw | ConvertFrom-Json).host))".Trim()
+    if ([string]::IsNullOrWhiteSpace($FileMakerHost)) {
+        Write-Error "config.json is missing a 'host' value"
+        exit 1
     }
 }
 

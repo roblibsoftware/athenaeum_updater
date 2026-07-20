@@ -20,11 +20,13 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-rem Read FileMaker host from host.txt, default to localhost if not found
-if exist "%~dp0host.txt" (
-    set /p fmhost=<"%~dp0host.txt"
-) else (
-    set fmhost=localhost
+rem Read FileMaker host from config.json (compulsory)
+set "fmhost="
+for /f "delims=" %%i in ('powershell -ExecutionPolicy Bypass -File "%~dp0ps1\get-config.ps1" -Key host') do set "fmhost=%%i"
+if not defined fmhost (
+    echo %ESC%[101;93mERROR: Could not read 'host' from config.json%ESC%[0m
+    pause
+    exit /b 1
 )
 
 echo Connecting to: %fmhost%
